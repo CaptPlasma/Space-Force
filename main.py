@@ -9,7 +9,7 @@ my_font = pygame.font.SysFont('Comic Sans MS', 30)
 movespeed = 3
 spawnRate = 60     #interval before enemies spawn
 spawnDelay = 0    #Initial delay before spawning
-popCap = 5          #Max enemy count
+popCap = 10          #Max enemy count
 enemyMoveSpeed = 1
 
 explosions = []
@@ -17,8 +17,11 @@ explosionSprites = []
 for x in range(12):
     explosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
 
+class Entity():
+    def __init__(self):
+        self.dead = False
 
-class Player():
+class Player(Entity):
     playerSprite = pygame.image.load("assets/Ship.png")
     shieldSprite = pygame.image.load("assets/Shield.png")
     width = playerSprite.get_width()
@@ -27,6 +30,7 @@ class Player():
     shieldHeight = shieldSprite.get_height()
 
     def __init__(self):
+        super().__init__()
         self.coords = [25, (scrn_h-Player.height)/2]
         self.shield = 10
         self.speed = 3
@@ -80,12 +84,9 @@ class Player():
         for bullet in self.bullets:
             bullet.update()
 
-class Bullet():
-    sprite = pygame.image.load("assets/playerBullet.png")
-    width = sprite.get_width()
-    height = sprite.get_height()
-
+class PlayerProjectile(Entity):
     def __init__(self, coords, speed, angle):
+        super().__init__()
         self.coords = coords
         self.speed = speed
         self.angle = angle
@@ -93,29 +94,49 @@ class Bullet():
     def move(self):
         self.coords[0] += math.cos(self.angle)*self.speed
         self.coords[1] += math.sin(self.angle)*self.speed
+        if self.coords[0] > scrn_w:
+            self.dead = True
+
+class Bullet(PlayerProjectile):
+    sprite = pygame.image.load("assets/playerBullet.png")
+    width = sprite.get_width()
+    height = sprite.get_height()
+
+    def __init__(self, coords, speed, angle):
+        super().__init__(coords, speed, angle)
+    
+    def collide(self, other):
+        if isinstance(other, Enemy) and not isinstance(other, EnemyProjectile):
+            self.dead = True
 
     def update(self):
         self.move()
         screen.blit(Bullet.sprite, self.coords)
 
-class Laser(Bullet):
+class Laser(PlayerProjectile):
     baseSprite = pygame.image.load("assets/laser_base.png")
     sprite = pygame.image.load("assets/laser.png")
+    width = sprite.get_width()
+    height = sprite.get_height()
+    baseOffsetY = (baseSprite.get_height()-height)/2
 
     def __init__(self, coords, angle, speed=sprite.get_width()):
-        super().__init__(coords, speed, angle)
+        super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
+    
+    def collide(self, other):
+        if isinstance(other, Enemy) and not isinstance(other, EnemyProjectile):
+            self.dead = True
 
     def update(self):
         self.move()
-        if self.coords != player.coords:
+        if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
             screen.blit(Laser.sprite, self.coords)
         else:
-            screen.blit(Laser.baseSprite, self.coords)
+            screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
-
-class Enemy():
+class Enemy(Entity):
     def __init__(self):
-        pass
+        super().__init__()
 
 class GreenEnemy(Enemy):
     sprite = pygame.image.load("assets/Ship.png")                                                   #change this
@@ -127,7 +148,6 @@ class GreenEnemy(Enemy):
         super().__init__()
         self.coords = [random.randint(scrn_w/2, scrn_w-100), random.randint(100, scrn_h-100)]
         self.direction = random.choice([-1,1])
-        self.dead = False
 
     def move(self):
         if self.coords[1] <= 0:
@@ -137,7 +157,7 @@ class GreenEnemy(Enemy):
         self.coords[1] += self.direction*GreenEnemy.speed
     
     def collide(self, other):
-        if isinstance(other, Bullet):
+        if isinstance(other, PlayerProjectile):
             self.dead = True
       
     def update(self):
@@ -157,7 +177,6 @@ class BlueEnemy(Enemy):
         self.coords = [random.choice([scrn_w/2, scrn_w*2/3, scrn_w*5/6]), random.randint(100, scrn_h-100)]
         self.direction = random.choice([-1,1])
         self.cooldown = BlueEnemy.firerate
-        self.dead = False
 
     def move(self):
         if self.coords[1] <= 0:
@@ -172,7 +191,7 @@ class BlueEnemy(Enemy):
             self.cooldown = BlueEnemy.firerate
     
     def collide(self, other):
-        if isinstance(other, Bullet):
+        if isinstance(other, PlayerProjectile):
             self.hp -= 1
             if self.hp == 0:
                 self.dead = True
@@ -183,22 +202,62 @@ class BlueEnemy(Enemy):
         self.shoot()
         screen.blit(BlueEnemy.sprite, self.coords)
 
-class BlueBullet(Enemy):
+class EnemyProjectile(Enemy):
+    def __init__(self, coords):
+        super().__init__()
+        self.coords = coords
+    
+    def collide(self, other):
+        if isinstance(other, Player):
+            self.dead = True
+
+class BlueBullet(EnemyProjectile):
     sprite = pygame.image.load("assets/playerBullet.png")                                           #change this
     speed = 10
     width = sprite.get_width()
     height = sprite.get_height()
 
     def __init__(self, coords):
-        super().__init__()
-        self.coords = coords
+        super().__init__(coords)
     
     def move(self):
         self.coords[0] -= BlueBullet.speed
+        if self.coords[0] <= 0-BlueBullet.width:
+            self.dead = True
     
     def update(self):
         self.move()
         screen.blit(BlueBullet.sprite, self.coords)
+
+class SuicideEnemy(Enemy):
+    sprite = pygame.image.load("assets/explosion/10.png")                                           #change this
+    speed = 10
+    width = sprite.get_width()
+    height = sprite.get_height()
+    prepTime = 500
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [random.randint(scrn_w/2, scrn_w*3/4), random.randint(100, scrn_h-100)]
+        self.time = SuicideEnemy.prepTime
+    
+    def move(self):
+        if(self.time > 0):
+            self.coords[0] += SuicideEnemy.speed/100
+        else:
+            self.coords[0] -= SuicideEnemy.speed
+            if self.coords[0] <= 0-SuicideEnemy.width:
+                self.dead = True
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile) or isinstance(other, Player):
+            self.dead = True
+
+    def update(self):
+        if self.time:
+            self.time -= 1
+        self.move()
+        screen.blit(SuicideEnemy.sprite, self.coords)
 
 scrn_w = 1920
 scrn_h = 1080
@@ -287,45 +346,56 @@ def playerBulletCore():
     for x in player.bullets:
         x.update()
 
+        if x.dead:
+            player.bullets.remove(x)
+            continue
+
         for ship in enemies:
-            if ship.coords[0] < x.coords[0] and ship.coords[1] - 50 < x.coords[1] and ship.coords[1] > x.coords[1] - 50:          #detects bullet collision
-                ship.collide(x)
+            if not isinstance(ship, EnemyProjectile):
+                if ship.coords[0] <= x.coords[0] + x.width and ship.coords[0] + ship.width >= x.coords[0] and ship.coords[1] <= x.coords[1] + x.height and ship.coords[1] + ship.height >= x.coords[1]:          #detects bullet collision
+                    ship.collide(x)
+                    x.collide(ship)
 
-                if ship.dead:
-                    enemies.remove(ship)
+                    if ship.dead:
+                        enemies.remove(ship)
 
-                x_offset = random.randrange(-25, 25)
-                y_offset = 0
-
-
-                explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
-                player.bullets.remove(x)
+                    x_offset = random.randrange(-25, 25)
+                    y_offset = 0
 
 
-
-
-
-        if x.coords[0] > 2000:             #removes off-screen bullets
-            try:                        #needed because harmless bug would take too much time to fix
-                player.bullets.remove(x)
-            except ValueError:
-                print("ERROR: Bullet not in list")
-
+                    explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                    
+                    if x.dead:
+                        try:
+                            player.bullets.remove(x)
+                        except ValueError:
+                            pass
 
 def enemyCore(enemies):
     global spawnRate
     global spawnDelay
-    if spawnDelay == 0 and len(enemies) < popCap:
-        enemies.append(GreenEnemy())
-        spawnDelay = spawnRate
+    numEnemies = 0
+    if spawnDelay == 0:
+        for x in enemies:
+            if not isinstance(x, EnemyProjectile):
+                numEnemies += 1
+        if numEnemies < popCap:
+            enemies.append(random.choice([GreenEnemy(), BlueEnemy(), SuicideEnemy()]))
+            spawnDelay = spawnRate
 
     if spawnDelay != 0:
         spawnDelay -= 1
 
     for x in enemies:
-        x.update()
+        if x.coords[0] <= player.coords[0] + player.width and x.coords[0] + x.width >= player.coords[0] and x.coords[1] <= player.coords[1] + player.height and x.coords[1] + x.height >= player.coords[1]:
+            player.collide(x)
+            x.collide(player)
+        if x.dead:
+            enemies.remove(x)
+        else:
+            x.update()
 
-    enemyMove(enemies)
+    #enemyMove(enemies)                                                                                     needs fixing
 
 
 def enemyMove(enemies):
@@ -343,38 +413,43 @@ def enemyMove(enemies):
         
         if len(g1) > 0:                 #makes newly spawned enemies move in the same direction as others
             for x in g1:
-                if enemies[x].direction != enemies[g1[0]].direction:
-                    enemies[x].direction = enemies[g1[0]].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    if enemies[x].direction != enemies[g1[0]].direction:
+                        enemies[x].direction = enemies[g1[0]].direction
         if len(g2) > 0:
             for x in g2:
-                if enemies[x].direction != enemies[g2[0]].direction:
-                    enemies[x].direction = enemies[g2[0]].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    if enemies[x].direction != enemies[g2[0]].direction:
+                        enemies[x].direction = enemies[g2[0]].direction
         if len(g3) > 0:
             for x in g3:
-                if enemies[x].direction != enemies[g3[0]].direction:
-                    enemies[x].direction = enemies[g3[0]].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    if enemies[x].direction != enemies[g3[0]].direction:
+                        enemies[x].direction = enemies[g3[0]].direction
 
         large_g1 = 0                                        #inverts direction of column if out of bounds
         small_g1 = 1080
         for index in g1:
-            if enemies[index].pos[1] > large_g1:
-                large_g1 = enemies[index].pos[1]
-            if enemies[index].pos[1] < small_g1:
-                small_g1 = enemies[index].pos[1]
+            if enemies[index].coords[1] > large_g1:
+                large_g1 = enemies[index].coords[1]
+            if enemies[index].coords[1] < small_g1:
+                small_g1 = enemies[index].coords[1]
         if small_g1 < 10 or large_g1 > 1000:
             for x in g1:
-                enemies[x].direction = -enemies[x].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    enemies[x].direction = -enemies[x].direction
 
         large_g2 = 0                                        #inverts direction of column if out of bounds
         small_g2 = 1080
         for index in g2:
-            if enemies[index].pos[1] > large_g2:
-                large_g2 = enemies[index].pos[1]
-            if enemies[index].pos[1] < small_g2:
-                small_g2 = enemies[index].pos[1]
+            if enemies[index].coords[1] > large_g2:
+                large_g2 = enemies[index].coords[1]
+            if enemies[index].coords[1] < small_g2:
+                small_g2 = enemies[index].coords[1]
         if small_g2 < 10 or large_g2 > 1000:
             for x in g2:
-                enemies[x].direction = -enemies[x].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    enemies[x].direction = -enemies[x].direction
 
         large_g3 = 0                                        #inverts direction of column if out of bounds
         small_g3 = 1080
@@ -385,7 +460,8 @@ def enemyMove(enemies):
                 small_g3 = enemies[index].coords[1]
         if small_g3 < 10 or large_g3 > 1000:
             for x in g3:
-                enemies[x].direction = -enemies[x].direction
+                if not isinstance(enemies[x], EnemyProjectile):
+                    enemies[x].direction = -enemies[x].direction
 
         for x in enemies:
             x.update()
