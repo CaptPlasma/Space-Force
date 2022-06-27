@@ -27,7 +27,7 @@ class Stage():
         self.enemyProgression = 1
         self.level = 1
         self.bossDead = False
-        self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
         self.enemies = []
         self.test = False
         self.shop = Shop()
@@ -41,7 +41,7 @@ class Stage():
         self.spawned = 0
         self.shop.active = True
         self.stageEnd = 300
-        self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
 
         # boss rewards
         if self.level%5 == 0:
@@ -59,6 +59,12 @@ class Stage():
     def spawnBoss(self):
         bossTypes = [MegaShip()]
         self.enemies.append(random.choice(bossTypes.copy()))
+
+    def paused(self):
+        screen.blit(self.background, (0,0))
+
+        for enemy in range(len(self.enemies)):
+            self.enemies[enemy].draw()
     
     def update(self):
         global titleActive
@@ -164,14 +170,14 @@ class Shop():
                 color = (220, 220, 220)
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
-            screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render("$"+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], False, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
+            screen.blit(my_font.render("$"+str(self.items[key][2]), True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
             if self.items[key][1] == -1:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), False, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), False, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
             elif self.items[key][0] >= self.items[key][1]:
-                screen.blit(my_font.render("Lv. MAX", False, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+                screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
             x_offset += button_w + spacing_w
             if x_offset + button_w + 100 > scrn_w:
                 x_offset = 150
@@ -353,6 +359,14 @@ class Player(Entity):
         for bullet in self.bullets:
             bullet.update()
 
+    def paused(self):
+        screen.blit(Player.playerSprite, self.coords)
+        if self.shield > 0:
+            screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
+
+        for bullet in self.bullets:
+            bullet.draw()
+
 class PlayerProjectile(Entity):
     def __init__(self, coords, speed, angle):
         super().__init__()
@@ -382,6 +396,9 @@ class Bullet(PlayerProjectile):
     def update(self):
         self.move()
         screen.blit(Bullet.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(Bullet.sprite, self.coords)
 
 class Laser(PlayerProjectile):
     baseSprite = pygame.image.load("assets/laser_base.png")
@@ -400,6 +417,12 @@ class Laser(PlayerProjectile):
 
     def update(self):
         self.move()
+        if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
+            screen.blit(Laser.sprite, self.coords)
+        else:
+            screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
+
+    def draw(self):
         if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
             screen.blit(Laser.sprite, self.coords)
         else:
@@ -442,6 +465,9 @@ class Strafer(Enemy):
       
     def update(self):
         self.move()
+        screen.blit(Strafer.sprite, self.coords)
+    
+    def draw(self):
         screen.blit(Strafer.sprite, self.coords)
 
 class BlueTurret(Enemy):
@@ -486,6 +512,9 @@ class BlueTurret(Enemy):
         self.move()
         self.shoot()
         screen.blit(BlueTurret.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(BlueTurret.sprite, self.coords)
 
 class EnemyProjectile(Enemy):
     def __init__(self, coords):
@@ -512,6 +541,9 @@ class EnemyBullet(EnemyProjectile):
     
     def update(self):
         self.move()
+        screen.blit(EnemyBullet.sprite, self.coords)
+
+    def draw(self):
         screen.blit(EnemyBullet.sprite, self.coords)
 
 class SuicideEnemy(Enemy):
@@ -552,6 +584,9 @@ class SuicideEnemy(Enemy):
         if self.time:
             self.time -= 1
         self.move()
+        screen.blit(SuicideEnemy.sprite, self.coords)
+    
+    def draw(self):
         screen.blit(SuicideEnemy.sprite, self.coords)
 
 class Fleet(Enemy):
@@ -675,6 +710,9 @@ class MegaShip(Boss):
         self.move()
         self.shoot()
         screen.blit(MegaShip.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(MegaShip.sprite, self.coords)
 
 class Bar():
     def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
@@ -694,8 +732,8 @@ class Bar():
             return
         pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(self.x, self.y, self.w, self.h))
         pygame.draw.rect(screen, self.color, pygame.Rect(self.x, self.y, (self.value/self.maxvalue)*self.w,self.h))
-        barText = my_font.render(self.title, False, (255, 255, 255))
-        screen.blit(barText, (self.x+self.w+15, self.y))
+        barText = my_font.render(self.title, True, (255, 255, 255))
+        screen.blit(barText, (self.x+self.w+15, self.y - 5))
 
         if (self.notch):
             for x in range(self.maxvalue):
@@ -710,6 +748,8 @@ def main():
 
     coolDown = 0
     activeWeapon = 0
+
+    paused = False
 
     running = True
     
@@ -729,9 +769,9 @@ def main():
     player = Player()
 
     ##########
-    health_bar = Bar(15, 0, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
-    shield_bar = Bar(15, 40, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
-    cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
+    health_bar = Bar(15, 10, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
+    shield_bar = Bar(15, 55, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
+    cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
     # main loop
@@ -742,12 +782,12 @@ def main():
 
         screen.fill((0,0,0)) #Clears the screen
 
-        
-        stage.update()
-
-        
-
-        player.update()
+        if paused:
+            stage.paused()
+            player.paused()
+        else:
+            stage.update()
+            player.update()
 
         health_bar.update(player.hp)
         shield_bar.update(player.shield)
@@ -771,32 +811,50 @@ def main():
                 running = False
             if event.type == pygame.MOUSEWHEEL:
                 player.switchWeapon(player.getWeapon()+event.y*-1)
-    
+
         keys = pygame.key.get_pressed()
-        if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
-            player.coords[1] -= player.speed
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
-            player.coords[1] += player.speed
 
-        if keys[pygame.K_1]:
-            player.switchWeapon(0)
-        if keys[pygame.K_2]:
-            player.switchWeapon(1)
+        if not paused:
+            
+            if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
+                player.coords[1] -= player.speed
+            if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
+                player.coords[1] += player.speed
 
-        if keys[pygame.K_SPACE]:
-            player.shoot()
-        elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
-                player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
-                player.laserTime = 0
-                Player.laserSound.fadeout(300)
+            if keys[pygame.K_1]:
+                player.switchWeapon(0)
+            if keys[pygame.K_2]:
+                player.switchWeapon(1)
 
-        if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a]:
-            stage.test = True
-            print("TESTING")
+            if keys[pygame.K_SPACE]:
+                player.shoot()
+            elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
+                    player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
+                    player.laserTime = 0
+                    Player.laserSound.fadeout(300)
 
-        enemyCore(stage.enemies)
-        playerBulletCore()
-        explosionCore(explosions)
+            if keys[pygame.K_ESCAPE]:
+                paused = True
+                
+            if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a] and not stage.test:
+                stage.test = True
+                print("=========TESTING=========")
+
+            enemyCore(stage.enemies)
+            playerBulletCore()
+            explosionCore(explosions)
+        else:
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            text = my_font.render('Press ENTER to Resume', False, (255, 255, 255))
+            screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
+
+            if keys[pygame.K_RETURN]:
+                paused = False
+                
 
         renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
@@ -975,24 +1033,20 @@ def enemyMove(enemies):
 def renderHUD(coolDown, activeWeapon, fps):
         if stage.title.active:
             return
-        activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", False, (255, 255, 255))
-        if player.money < 10:
-            money = my_font.render("$0.0"+str(player.money), False, (255, 255, 255))
-        elif player.money < 100:
-            money = my_font.render("$0."+str(player.money), False, (255, 255, 255))
-        else:
-            money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], False, (255, 255, 255))
-
-        frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
-
+        if player.getWeapon() == 0:
+            #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
+            activeWeaponText = my_font.render("Laser Cannon Active", True, (255, 255, 255))
+        elif player.getWeapon() == 1:
+            #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
+            activeWeaponText = my_font.render("Laser Beam Active", True, (255, 255, 255))
+        money = my_font.render("$"+str("{:,}".format(player.money))+".00", True, (255, 255, 255))
+        frameRate = my_font.render(str(int(fps)), True, (0, 255, 0))
         #screen.blit(CDtext, (10,0))
-        screen.blit(activeWeaponText, (10, 90))
+        screen.blit(activeWeaponText, (15, 90))
         screen.blit(frameRate, (1865, 0))
         screen.blit(money, (600,0))
 
      
-# run the main function only if this module is executed as the main script
-# (if you import this as a module then nothing is executed)
 if __name__=="__main__":
     # call the main function
     main() 
