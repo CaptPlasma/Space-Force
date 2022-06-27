@@ -776,10 +776,21 @@ def main():
     cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
+    # death screen vars
+    death_font = pygame.font.SysFont('Comic Sans MS', 300)
+    death_text = death_font.render("Game Over!", False, (200, 0, 0))
+    score_text = my_font.render("Score: "+str(player.score), False, (255, 255, 255))
+    score_text.set_alpha(0)
+    deathLoc = -death_font.get_height()
+    deathVel = 1
+    deathAcc = 0.1
+    deathBounce = 0
+
     # main loop
     while running:
 
         if stage.test:# put code for testing here
+            player.hp -= 1
             pass
 
         screen.fill((0,0,0)) #Clears the screen
@@ -816,7 +827,31 @@ def main():
 
         keys = pygame.key.get_pressed()
 
-        if not paused:
+        if player.hp <= 0:
+            paused = True
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            screen.blit(death_text, (screen.get_width()/2 - death_text.get_width()/2, deathLoc))
+
+            if deathBounce > 5:
+                screen.blit(score_text, (screen.get_width()/2 - score_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2))
+                score_text.set_alpha(min(254,score_text.get_alpha()+1))
+
+            else:
+                deathLoc += deathVel
+                if deathLoc < screen.get_height()/2 - death_text.get_height()*3/5:
+                    deathVel += deathAcc
+                else:
+                    deathVel *= -0.5
+                    deathBounce += 1
+
+                if keys[pygame.K_RETURN]:
+                    return
+
+        elif not paused:
             
             if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
                 player.coords[1] -= player.speed
@@ -845,15 +880,6 @@ def main():
             enemyCore(stage.enemies)
             playerBulletCore()
             explosionCore(explosions)
-            if player.hp <= 0:
-                backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
-                backdrop.set_alpha(120)
-                backdrop.fill((0, 0, 0))
-                screen.blit(backdrop, (0,0))
-
-                text = my_font.render("Game Over!\nScore: "+str(player.score), False, (255, 255, 255))
-                screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
-                break
 
         else:
             backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
