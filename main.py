@@ -171,7 +171,7 @@ class Shop():
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render("$"+str(self.items[key][2]), True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            screen.blit(my_font.render('$'+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
             if self.items[key][1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
@@ -278,6 +278,7 @@ class Player(Entity):
         self.invTime = 0
         self.money=0
         self.moneyMulti = 1
+        self.score = 0
 
     def getWeapon(self):
         return self.weapon
@@ -340,6 +341,7 @@ class Player(Entity):
 
     def earn(self, amt):
         self.money += amt*self.moneyMulti
+        self.score += amt
 
     def update(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -472,7 +474,7 @@ class Strafer(Enemy):
 
 class BlueTurret(Enemy):
     sprite = pygame.image.load("assets/blueTurret.png")                                                 #change this
-    bounty = 150
+    bounty = 200
     speed = 0.5
     firerate = 300
     width = sprite.get_width()
@@ -843,6 +845,16 @@ def main():
             enemyCore(stage.enemies)
             playerBulletCore()
             explosionCore(explosions)
+            if player.hp <= 0:
+                backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+                backdrop.set_alpha(120)
+                backdrop.fill((0, 0, 0))
+                screen.blit(backdrop, (0,0))
+
+                text = my_font.render("Game Over!\nScore: "+str(player.score), False, (255, 255, 255))
+                screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
+                break
+
         else:
             backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
             backdrop.set_alpha(120)
@@ -1031,20 +1043,21 @@ def enemyMove(enemies):
             x.update()
 
 def renderHUD(coolDown, activeWeapon, fps):
-        if stage.title.active:
-            return
-        if player.getWeapon() == 0:
-            #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Cannon Active", True, (255, 255, 255))
-        elif player.getWeapon() == 1:
-            #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Beam Active", True, (255, 255, 255))
-        money = my_font.render("$"+str("{:,}".format(player.money))+".00", True, (255, 255, 255))
-        frameRate = my_font.render(str(int(fps)), True, (0, 255, 0))
-        #screen.blit(CDtext, (10,0))
-        screen.blit(activeWeaponText, (15, 90))
-        screen.blit(frameRate, (1865, 0))
-        screen.blit(money, (600,0))
+    if stage.title.active:
+        return
+    activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
+    if player.money < 10:
+        money = my_font.render("$0.0"+str(player.money), True, (255, 255, 255))
+    elif player.money < 100:
+        money = my_font.render("$0."+str(player.money), True, (255, 255, 255))
+    else:
+        money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], True, (255, 255, 255))
+
+    frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
+    #screen.blit(CDtext, (10,0))
+    screen.blit(activeWeaponText, (15, 90))
+    screen.blit(frameRate, (1865, 0))
+    screen.blit(money, (600,0))
 
      
 if __name__=="__main__":
