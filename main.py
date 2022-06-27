@@ -25,6 +25,7 @@ class Stage():
         self.spawned = 0
         self.stageEnd = 0
         self.level = 0
+        self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
         self.shop = Shop()
@@ -40,6 +41,9 @@ class Stage():
         if self.level%5 == 0:
             Enemy.hpMulti += 0.2
             player.moneyMulti += 0.1
+
+    def spawnBoss(self):
+        self.enemies.append(random.choice(bossTypes))
     
     def update(self):
 
@@ -50,8 +54,15 @@ class Stage():
         elif self.stageEnd > 0:
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
-        elif len(self.enemies) == 0:
-            self.advance()
+        elif len(self.enemies) == 0 and self.spawned >= self.toSpawn:
+            if self.level%5 == 0:
+                if self.bossDead:
+                    self.advance()
+                else:
+                    self.spawnBoss()
+            else:
+                self.bossDead = False
+                self.advance()
         else:
             for enemy in range(len(self.enemies)):
                 self.enemies[enemy].update()
@@ -339,7 +350,6 @@ class Strafer(Enemy):
     sprite = pygame.image.load("assets/Ship.png")                                                   #change this
     bounty = 100
     speed = 1
-    hp = 1*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
 
@@ -347,6 +357,7 @@ class Strafer(Enemy):
         super().__init__()
         self.coords = [random.randint(scrn_w/2, scrn_w-100), random.randint(100, scrn_h-100)]
         self.direction = random.choice([-1,1])
+        self.hp = 1*Enemy.hpMulti
 
     def move(self):
         if self.coords[1] <= 0:
@@ -371,7 +382,6 @@ class BlueTurret(Enemy):
     bounty = 150
     speed = 0.5
     firerate = 300
-    hp = 3*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
     bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
@@ -382,6 +392,7 @@ class BlueTurret(Enemy):
         self.coords = [random.choice([scrn_w/2, scrn_w*2/3, scrn_w*5/6]), random.randint(100, scrn_h-100)]
         self.direction = random.choice([-1,1])
         self.cooldown = BlueTurret.firerate
+        self.hp = 3*Enemy.hpMulti
 
     def move(self):
         if self.coords[1] <= 0:
@@ -440,7 +451,6 @@ class SuicideEnemy(Enemy):
     sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
     bounty = 250
     speed = 10
-    hp = 0.5*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
     prepTime = 500
@@ -449,6 +459,7 @@ class SuicideEnemy(Enemy):
         super().__init__()
         self.coords = [random.randint(scrn_w/2, scrn_w*3/4), random.randint(100, scrn_h-100)]
         self.time = SuicideEnemy.prepTime
+        self.hp = 0.5*Enemy.hpMulti
     
     def move(self):
         if(self.time > 0):
@@ -476,6 +487,59 @@ class SuicideEnemy(Enemy):
         self.move()
         screen.blit(SuicideEnemy.sprite, self.coords)
 
+class Boss(Enemy):
+    bounty = 10000
+
+    def __init__(self):
+        super().__init__()
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+                stage.bossDead = True
+
+class MegaShip(Boss):
+    sprite = pygame.image.load("assets/Ship.png")                                                                         #change this
+    firerate = 100
+    suicide_firerate = 500
+    speed = 0.5
+    width = sprite.get_width()
+    height = sprite.get_height()
+    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound.set_volume(0.08)#idk too loud
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [(scrn_w-MegaShip.width)*4/5, (scrn_h-MegaShip.height)/2]
+        self.hp = 20*Enemy.hpMulti
+        self.cooldown = MegaShip.firerate
+        self.suicideCooldown = MegaShip.suicide_firerate
+        self.direction = random.choice([-1,1])
+
+    def move(self):
+        if self.coords[1] <= 0:
+            self.direction = 1
+        elif self.coords[1] >= scrn_h-MegaShip.height:
+            self.direction = -1
+        self.coords[1] += self.direction*MegaShip.speed
+
+    def shoot(self):
+        if self.cooldown <= 0:
+            MegaShip.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(MegaShip.height-MegaShip.height)/2]))
+            self.cooldown = MegaShip.firerate
+        if self.suicideCooldown <= 0:
+            stage.enemies.append(SuicideEnemy())
+            self.suicideCooldown = MegaShip.suicide_firerate
+    
+    def update(self):
+        self.cooldown -= 1
+        self.suicideCooldown -= 1
+        self.move()
+        self.shoot()
+        screen.blit(MegaShip.sprite, self.coords)
 
 class Bar():
     def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
@@ -504,6 +568,7 @@ class Bar():
         self.value = val
 
 enemyTypes = [Strafer(), BlueTurret(), SuicideEnemy()]
+bossTypes = [MegaShip()]
 
 # define a main function
 def main():
