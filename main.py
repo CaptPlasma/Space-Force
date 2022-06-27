@@ -64,6 +64,13 @@ class Shop():
             "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
             "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
         }
+        self.itemKeys = [
+            "Buy Laser Beam",
+            "Upgrade Laser Cannon Damage",
+            "Upgrade Laser Beam Damage",
+            "Upgrade Laser Beam Duration"
+        ]
+        self.clickToggle = False
     
     def buy(self, item):
         if item in self.items:
@@ -87,7 +94,6 @@ class Shop():
                 elif item == "Upgrade Laser Beam Duration":
                     player.laserDuration += 50
 
-
     def display(self):
         x_offset = 100
         y_offset = 100
@@ -95,26 +101,38 @@ class Shop():
         button_h = 50
         spacing_w = 50
         spacing_h = 50
-        buttons = []
+        self.buttons = []
         button = 0
         for key in self.items:
             if player.money >= self.items[key][2] and self.items[key][0] < self.items[key][1]:
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
-            buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
-            pygame.draw.rect(screen, color, buttons[button])
-            screen.blit(my_font.render(key, False, (0, 0, 0)), buttons[button])
+            self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
+            pygame.draw.rect(screen, color, self.buttons[button])
+            screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
             x_offset += button_w + spacing_w
             if x_offset + button_w + 100 > scrn_w:
                 x_offset = 100
                 y_offset += button_h + spacing_h
             button += 1
 
+    def detectClick(self):
+        pos = pygame.mouse.get_pos()
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0] and not self.clickToggle:
+            self.clickToggle = True
+            for button in range(len(self.buttons)):
+                if self.buttons[button].collidepoint(pos):
+                    self.buy(self.itemKeys[button])
+        elif not mouse[0]:
+            self.clickToggle = False
+
     def update(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE]:
             self.active = False
+        self.detectClick()
         self.display()
 
 class Entity():
