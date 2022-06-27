@@ -419,7 +419,7 @@ class Strafer(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords = [random.randint(scrn_w/2, scrn_w-100), random.randint(100, scrn_h-100)]
+        self.coords = [random.randint(scrn_w/2, scrn_w-Strafer.width-100), random.randint(100, scrn_h-Strafer.height-100)]
         self.direction = random.choice([-1,1])
         self.hp = 1*Enemy.hpMulti
 
