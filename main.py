@@ -57,6 +57,12 @@ class Stage():
     def spawnBoss(self):
         bossTypes = [MegaShip()]
         self.enemies.append(random.choice(bossTypes.copy()))
+
+    def paused(self):
+        screen.blit(self.background, (0,0))
+
+        for enemy in range(len(self.enemies)):
+            self.enemies[enemy].draw()
     
     def update(self):
         global titleActive
@@ -351,6 +357,14 @@ class Player(Entity):
         for bullet in self.bullets:
             bullet.update()
 
+    def paused(self):
+        screen.blit(Player.playerSprite, self.coords)
+        if self.shield > 0:
+            screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
+
+        for bullet in self.bullets:
+            bullet.draw()
+
 class PlayerProjectile(Entity):
     def __init__(self, coords, speed, angle):
         super().__init__()
@@ -380,6 +394,9 @@ class Bullet(PlayerProjectile):
     def update(self):
         self.move()
         screen.blit(Bullet.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(Bullet.sprite, self.coords)
 
 class Laser(PlayerProjectile):
     baseSprite = pygame.image.load("assets/laser_base.png")
@@ -398,6 +415,12 @@ class Laser(PlayerProjectile):
 
     def update(self):
         self.move()
+        if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
+            screen.blit(Laser.sprite, self.coords)
+        else:
+            screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
+
+    def draw(self):
         if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
             screen.blit(Laser.sprite, self.coords)
         else:
@@ -440,6 +463,9 @@ class Strafer(Enemy):
       
     def update(self):
         self.move()
+        screen.blit(Strafer.sprite, self.coords)
+    
+    def draw(self):
         screen.blit(Strafer.sprite, self.coords)
 
 class BlueTurret(Enemy):
@@ -484,6 +510,9 @@ class BlueTurret(Enemy):
         self.move()
         self.shoot()
         screen.blit(BlueTurret.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(BlueTurret.sprite, self.coords)
 
 class EnemyProjectile(Enemy):
     def __init__(self, coords):
@@ -510,6 +539,9 @@ class EnemyBullet(EnemyProjectile):
     
     def update(self):
         self.move()
+        screen.blit(EnemyBullet.sprite, self.coords)
+
+    def draw(self):
         screen.blit(EnemyBullet.sprite, self.coords)
 
 class SuicideEnemy(Enemy):
@@ -550,6 +582,9 @@ class SuicideEnemy(Enemy):
         if self.time:
             self.time -= 1
         self.move()
+        screen.blit(SuicideEnemy.sprite, self.coords)
+    
+    def draw(self):
         screen.blit(SuicideEnemy.sprite, self.coords)
 
 class Boss(Enemy):
@@ -605,6 +640,9 @@ class MegaShip(Boss):
         self.move()
         self.shoot()
         screen.blit(MegaShip.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(MegaShip.sprite, self.coords)
 
 class Bar():
     def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
@@ -641,6 +679,8 @@ def main():
     coolDown = 0
     activeWeapon = 0
 
+    paused = False
+
     running = True
     
     frametime = pygame.time.Clock()
@@ -670,12 +710,12 @@ def main():
     while running:
         screen.fill((0,0,0)) #Clears the screen
 
-        
-        stage.update()
-
-        
-
-        player.update()
+        if paused:
+            stage.paused()
+            player.paused()
+        else:
+            stage.update()
+            player.update()
 
         health_bar.update(player.hp)
         shield_bar.update(player.shield)
@@ -699,28 +739,46 @@ def main():
                 running = False
             if event.type == pygame.MOUSEWHEEL:
                 player.switchWeapon(player.getWeapon()+event.y*-1)
-    
+
         keys = pygame.key.get_pressed()
-        if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
-            player.coords[1] -= player.speed
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
-            player.coords[1] += player.speed
 
-        if keys[pygame.K_1]:
-            player.switchWeapon(0)
-        if keys[pygame.K_2]:
-            player.switchWeapon(1)
+        if not paused:
+            
+            if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
+                player.coords[1] -= player.speed
+            if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
+                player.coords[1] += player.speed
 
-        if keys[pygame.K_SPACE]:
-            player.shoot()
-        elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
-                player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
-                player.laserTime = 0
-                Player.laserSound.fadeout(300)
+            if keys[pygame.K_1]:
+                player.switchWeapon(0)
+            if keys[pygame.K_2]:
+                player.switchWeapon(1)
 
-        enemyCore(stage.enemies)
-        playerBulletCore()
-        explosionCore(explosions)
+            if keys[pygame.K_SPACE]:
+                player.shoot()
+            elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
+                    player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
+                    player.laserTime = 0
+                    Player.laserSound.fadeout(300)
+
+            if keys[pygame.K_ESCAPE]:
+                paused = True
+
+            enemyCore(stage.enemies)
+            playerBulletCore()
+            explosionCore(explosions)
+        else:
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            text = my_font.render('Press ENTER to Resume', False, (255, 255, 255))
+            screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
+
+            if keys[pygame.K_RETURN]:
+                paused = False
+                
 
         renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
