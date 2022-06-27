@@ -188,7 +188,7 @@ class Player(Entity):
                 self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
                 #Player.bulletSound.play()
-        elif self.weapon == 1:
+        elif self.unlockedWeapons[self.weapon] == "Laser Beam":
             if self.laserCD <= 0 and self.laserTime < self.laserDuration:
                 self.bullets.append(Laser(self.coords.copy(), 0))
                 self.laserTime += 1
