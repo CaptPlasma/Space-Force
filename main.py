@@ -148,9 +148,19 @@ class Player(Entity):
     shieldHeight = shieldSprite.get_height()
 
     #sfx
-    #laserSound = pygame.mixer.Sound("assets/LaserPulseSevereEl PE431901_preview.mp3")#
-    #laserSound.set_volume(0.2)#
-    #bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+    laserSound = pygame.mixer.Sound("assets/laser.wav")#
+    laserSound.set_volume(0.2)
+    bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+    shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
+    shipHit.set_volume(0.3)
+    shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
+    shieldHit.set_volume(0.2)
+    reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
+    reloadSound.set_volume(0.1)
+    shieldBreak = pygame.mixer.Sound("assets/break.wav")
+    shieldBreak.set_volume(0.5)
+    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode.set_volume(0.5)
 
     def __init__(self):
         super().__init__()
@@ -206,11 +216,20 @@ class Player(Entity):
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
                 explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                if self.shield == 0:
+                    Player.shieldBreak.play()
+                else:
+                    Player.shieldHit.play()
+
             else:
                 self.hp -= 1
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
                 explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                if self.hp == 0:
+                    Player.shipExplode.play()
+                else:
+                    Player.shipHit.play()
 
     def earn(self, amt):
         self.money += amt*self.moneyMulti
@@ -221,8 +240,12 @@ class Player(Entity):
             screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
         if self.bulletCD > 0 :
             self.bulletCD -= 1
+            if (self.bulletCD == 0):
+                Player.reloadSound.play()
         if self.laserCD > 0:
             self.laserCD -= 1
+            if (self.laserCD == 0):
+                Player.reloadSound.play()
         if self.invTime > 0:
             self.invTime -= 1
         for bullet in self.bullets:
@@ -282,6 +305,8 @@ class Laser(PlayerProjectile):
 
 class Enemy(Entity):
     hpMulti = 1
+    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode.set_volume(0.5)
 
     def __init__(self):
         super().__init__()
@@ -311,6 +336,7 @@ class Strafer(Enemy):
             self.hp -= other.damage
             if self.hp <= 0:
                 self.dead = True
+            Enemy.shipExplode.play()
       
     def update(self):
         self.move()
@@ -324,6 +350,8 @@ class BlueTurret(Enemy):
     hp = 3*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
+    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
         super().__init__()
@@ -340,6 +368,7 @@ class BlueTurret(Enemy):
 
     def shoot(self):
         if self.cooldown <= 0:
+            BlueTurret.bulletSound.play()
             stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(BlueTurret.height-EnemyBullet.height)/2]))
             self.cooldown = BlueTurret.firerate
     
@@ -348,6 +377,7 @@ class BlueTurret(Enemy):
             self.hp -= other.damage
             if self.hp <= 0:
                 self.dead = True
+                Enemy.shipExplode.play()
     
     def update(self):
         self.cooldown -= 1
@@ -410,6 +440,7 @@ class SuicideEnemy(Enemy):
         if isinstance(other, Player):
             self.hp = 0
             self.dead = True
+            Enemy.shipExplode.play()
         elif isinstance(other, PlayerProjectile):
             self.hp -= other.damage
             if self.hp <= 0:
@@ -420,6 +451,33 @@ class SuicideEnemy(Enemy):
             self.time -= 1
         self.move()
         screen.blit(SuicideEnemy.sprite, self.coords)
+
+
+class Bar():
+    def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
+        super().__init__()
+        self.value = 0
+        self.maxvalue = maxval
+        self.w = width
+        self.h = height
+        self.x = xpos
+        self.y = ypos
+        self.title = title
+        self.notch = notch
+        self.color = color
+
+    def display(self):
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(self.x, self.y, self.w, self.h))
+        pygame.draw.rect(screen, self.color, pygame.Rect(self.x, self.y, (self.value/self.maxvalue)*self.w,self.h))
+        barText = my_font.render(self.title, False, (255, 255, 255))
+        screen.blit(barText, (self.x+self.w+15, self.y))
+
+        if (self.notch):
+            for x in range(self.maxvalue):
+                pygame.draw.line(screen, (0, 0, 0), (self.x+(x*(self.w/self.maxvalue)), self.y), (self.x+(x*(self.w/self.maxvalue)), self.y+self.h))
+   
+    def update(self, val):
+        self.value = val
 
 enemyTypes = [Strafer(), BlueTurret(), SuicideEnemy()]
 
@@ -448,6 +506,12 @@ def main():
      
     player = Player()
 
+    ##########
+    health_bar = Bar(15, 0, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
+    shield_bar = Bar(15, 40, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
+    cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
+    ##########
+
     # main loop
     while running:
         screen.fill((0,0,0)) #Clears the screen
@@ -456,6 +520,23 @@ def main():
 
         player.update()
 
+        health_bar.update(player.hp)
+        shield_bar.update(player.shield)
+
+        if player.getWeapon() == 0:
+            cooldown_bar.update(cooldown_bar.maxvalue-(player.bulletCD/player.bullet_firerate)*cooldown_bar.maxvalue)
+
+        elif player.getWeapon() == 1:
+            if player.laserTime > 0:
+                cooldown_bar.update(cooldown_bar.maxvalue-((player.laserTime)/player.laserDuration)*cooldown_bar.maxvalue)
+            else:
+                cooldown_bar.update(cooldown_bar.maxvalue-(player.laserCD/player.laser_firerate)*cooldown_bar.maxvalue)
+
+
+        health_bar.display()
+        shield_bar.display()
+        cooldown_bar.display()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -465,7 +546,7 @@ def main():
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
             player.coords[1] -= player.speed
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height)/2 < scrn_h:
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
             player.coords[1] += player.speed
 
         if keys[pygame.K_1]:
@@ -629,10 +710,10 @@ def enemyMove(enemies):
 def renderHUD(coolDown, activeWeapon, fps):
         
         if player.getWeapon() == 0:
-            CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
+            #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
             activeWeaponText = my_font.render("Laser Cannon Active", False, (255, 255, 255))
         elif player.getWeapon() == 1:
-            CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
+            #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
             activeWeaponText = my_font.render("Laser Beam Active", False, (255, 255, 255))
         if player.money < 10:
             money = my_font.render("$0.0"+str(player.money), False, (255, 255, 255))
@@ -643,8 +724,8 @@ def renderHUD(coolDown, activeWeapon, fps):
 
         frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
 
-        screen.blit(CDtext, (10,0))
-        screen.blit(activeWeaponText, (80, 0))
+        #screen.blit(CDtext, (10,0))
+        screen.blit(activeWeaponText, (10, 90))
         screen.blit(frameRate, (1865, 0))
         screen.blit(money, (500,0))
 
