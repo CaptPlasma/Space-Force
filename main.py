@@ -49,10 +49,12 @@ class Stage():
             player.moneyMulti += 0.1
 
         # unlock enemies
-        if self.level == 2:
-            self.enemyProgression = 2
-        if self.level == 6:
+        if self.level >= 6:
+            self.enemyProgression = 4
+        elif self.level >= 3:
             self.enemyProgression = 3
+        elif self.level >= 2:
+            self.enemyProgression = 2
 
     def spawnBoss(self):
         bossTypes = [MegaShip()]
@@ -552,11 +554,79 @@ class SuicideEnemy(Enemy):
         self.move()
         screen.blit(SuicideEnemy.sprite, self.coords)
 
+class Fleet(Enemy):
+    bounty = 500
+    speed = 1
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [scrn_w, random.randint(0, Fighter.height*5)]
+        self.fleetMembers = [
+            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]]),
+            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height]),
+            Fighter([self.coords[0], self.coords[1]+Fighter.height*2]),
+            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height*3]),
+            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]+Fighter.height*4])
+        ]
+        for member in self.fleetMembers:
+            member.speed = self.speed
+        self.memberCount = len(self.fleetMembers)
+    
+    def move(self):
+        self.coords[0] -= self.speed
+        if self.coords[0] + Fighter.width*3 < 0:
+            for member in self.fleetMembers:
+                self.fleetMembers.remove(member)
+            self.dead = True
+    
+    def update(self):
+        if len(self.fleetMembers) <= 0:
+            self.dead = True
+            if self.memberCount <= 0:
+                player.earn(Fleet.bounty)
+            return
+        self.move()
+        for member in self.fleetMembers:
+            if member.dead:
+                self.fleetMembers.remove(member)
+                continue
+            member.update()
+
+class Fighter(Enemy):
+    sprite = pygame.image.load("assets/Ship.png")
+    bounty = 100
+    speed = 1
+    width = sprite.get_width()
+    height = sprite.get_height()
+
+    def __init__(self, coords):
+        super().__init__()
+        self.hp = 1*Enemy.hpMulti
+        self.coords = coords
+
+    def move(self):
+        self.coords[0] -= self.speed
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+        elif isinstance(other, Player):
+            self.hp = 0
+            self.dead = True
+            Enemy.shipExplode.play()
+    
+    def update(self):
+        self.move()
+        screen.blit(Fighter.sprite, self.coords)
+
 class Boss(Enemy):
     bounty = 10000
 
     def __init__(self):
         super().__init__()
+        self.bounty *= stage.level/5
 
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
@@ -664,10 +734,12 @@ def main():
     cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
     ##########
 
-
-
     # main loop
     while running:
+
+        if stage.test:# put code for testing here
+            pass
+
         screen.fill((0,0,0)) #Clears the screen
 
         
@@ -718,6 +790,10 @@ def main():
                 player.laserTime = 0
                 Player.laserSound.fadeout(300)
 
+        if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a]:
+            stage.test = True
+            print("TESTING")
+
         enemyCore(stage.enemies)
         playerBulletCore()
         explosionCore(explosions)
@@ -744,7 +820,7 @@ def playerBulletCore():
             continue
 
         for ship in stage.enemies:
-            if not isinstance(ship, EnemyProjectile):
+            if not isinstance(ship, EnemyProjectile) and not isinstance(ship, Fleet):
                 if ship.coords[0] <= x.coords[0] + x.width and ship.coords[0] + ship.width >= x.coords[0] and ship.coords[1] <= x.coords[1] + x.height and ship.coords[1] + ship.height >= x.coords[1]:          #detects bullet collision
                     ship.collide(x)
                     x.collide(ship)
@@ -764,6 +840,28 @@ def playerBulletCore():
                             player.bullets.remove(x)
                         except ValueError:
                             pass
+            elif isinstance(ship, Fleet):
+                for member in ship.fleetMembers:
+                    if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
+                        member.collide(x)
+                        x.collide(member)
+
+                        if member.dead:
+                            player.earn(member.bounty)
+                            ship.memberCount -= 1
+
+                        x_offset = random.randrange(-25, 25)
+                        y_offset = 0
+
+
+                        explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                        
+                        if x.dead:
+                            try:
+                                player.bullets.remove(x)
+                            except ValueError:
+                                pass
+                        break
 
 def enemyCore(enemies):
     global spawnRate
@@ -776,7 +874,7 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
-            enemyTypes = [Strafer(), BlueTurret(), SuicideEnemy()]
+            enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
             enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
             stage.spawned += 1
             spawnDelay = spawnRate
@@ -785,13 +883,24 @@ def enemyCore(enemies):
         spawnDelay -= 1
 
     for x in enemies:
-        if x.coords[0] <= player.coords[0] + player.width and x.coords[0] + x.width >= player.coords[0] and x.coords[1] <= player.coords[1] + player.height and x.coords[1] + x.height >= player.coords[1]:
-            player.collide(x)
-            x.collide(player)
-        if x.dead:
-            enemies.remove(x)
+        if isinstance(x, Fleet):
+            for member in x.fleetMembers:
+                if member.coords[0] <= player.coords[0] + player.width and member.coords[0] + member.width >= player.coords[0] and member.coords[1] <= player.coords[1] + player.height and member.coords[1] + member.height >= player.coords[1]:
+                    player.collide(x)
+                    member.collide(player)
+            if x.dead:
+                enemies.remove(x)
+            else:
+                x.update()
+
         else:
-            x.update()
+            if x.coords[0] <= player.coords[0] + player.width and x.coords[0] + x.width >= player.coords[0] and x.coords[1] <= player.coords[1] + player.height and x.coords[1] + x.height >= player.coords[1]:
+                player.collide(x)
+                x.collide(player)
+            if x.dead:
+                enemies.remove(x)
+            else:
+                x.update()
 
     #enemyMove(enemies)                                                                                     needs fixing
 
