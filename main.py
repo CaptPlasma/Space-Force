@@ -39,6 +39,7 @@ class Stage():
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         if self.level%5 == 0:
             Enemy.hpMulti += 0.2
+            player.moneyMulti += 0.1
     
     def update(self):
 
@@ -167,6 +168,9 @@ class Player(Entity):
         self.coords = [25, (scrn_h-Player.height)/2]
         self.hp = 3
         self.shield = 5
+        self.shieldMax = 5
+        self.shieldRegenSpeed = 500
+        self.shieldTimer = 0
         self.speed = 3
         self.bulletCD = 0
         self.bullet_firerate = 200
@@ -231,11 +235,22 @@ class Player(Entity):
                 else:
                     Player.shipHit.play()
 
+            if self.shield <= 0:
+                self.shieldTimer = self.shieldRegenSpeed * -1
+    
+    def regenShield(self):
+        if self.shield < self.shieldMax:
+            self.shieldTimer += 1
+        if self.shieldTimer >= self.shieldRegenSpeed:
+            self.shield += 1
+            self.shieldTimer = 0
+
     def earn(self, amt):
         self.money += amt*self.moneyMulti
 
     def update(self):
         screen.blit(Player.playerSprite, self.coords)
+        self.regenShield()
         if self.shield > 0:
             screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
         if self.bulletCD > 0 :
