@@ -56,7 +56,8 @@ class Shop():
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
             "Buy Laser Beam": [0, 1, 5000, [], []],
             "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
-            "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]]
+            "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
+            "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
         }
     
     def buy(self, item):
@@ -78,9 +79,28 @@ class Shop():
                     Bullet.damage += 0.5
                 elif item == "Upgrade Laser Beam Damage":
                     Laser.damage += 0.25
+                elif item == "Upgrade Laser Beam Duration":
+                    player.laserDuration += 50
+
 
     def display(self):
-        pass
+        x_offset = 100
+        y_offset = 100
+        button_w = 1000
+        button_h = 50
+        spacing_w = 50
+        spacing_h = 50
+        buttons = []
+        button = 0
+        for key in self.items:
+            if player.money >= self.items[key][2] or self.items[key][0] < self.items[key][1]:
+                color = (0, 255, 0)
+            else:
+                color = (220, 220, 220)
+            buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
+            pygame.draw.rect(pygame.display.set_mode((400,300)), color, buttons[button])
+            screen.blit(my_font.render(key, False, (0, 0, 0)), buttons[button])
+            button += 1
 
 class Entity():
     def __init__(self):
