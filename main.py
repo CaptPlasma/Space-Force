@@ -24,7 +24,6 @@ class Stage():
         self.toSpawn = 10
         self.spawned = 0
         self.stageEnd = 0
-        self.shopping = False
         self.level = 0
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
@@ -35,6 +34,7 @@ class Stage():
         self.enemyCap = 5+math.ceil(self.level**.5)*5
         self.toSpawn = 9+self.level
         self.spawned = 0
+        self.shop.active = True
         self.stageEnd = 300
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         if self.level%5 == 0:
@@ -44,19 +44,20 @@ class Stage():
 
         screen.blit(self.background, (0,0))
 
-        if self.shopping:
-            self.shop.display()
+        if self.shop.active:
+            self.shop.update()
         elif self.stageEnd > 0:
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0:
             self.advance()
-        
-        for enemy in range(len(self.enemies)):
-            self.enemies[enemy].update()
+        else:
+            for enemy in range(len(self.enemies)):
+                self.enemies[enemy].update()
 
 class Shop():
     def __init__(self):
+        self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
             "Buy Laser Beam": [0, 1, 5000, [], []],
             "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
@@ -90,21 +91,31 @@ class Shop():
     def display(self):
         x_offset = 100
         y_offset = 100
-        button_w = 1000
+        button_w = 500
         button_h = 50
         spacing_w = 50
         spacing_h = 50
         buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] or self.items[key][0] < self.items[key][1]:
+            if player.money >= self.items[key][2] and self.items[key][0] < self.items[key][1]:
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
             buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
-            pygame.draw.rect(pygame.display.set_mode((400,300)), color, buttons[button])
+            pygame.draw.rect(screen, color, buttons[button])
             screen.blit(my_font.render(key, False, (0, 0, 0)), buttons[button])
+            x_offset += button_w + spacing_w
+            if x_offset + button_w + 100 > scrn_w:
+                x_offset = 100
+                y_offset += button_h + spacing_h
             button += 1
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            self.active = False
+        self.display()
 
 class Entity():
     def __init__(self):
@@ -119,9 +130,9 @@ class Player(Entity):
     shieldHeight = shieldSprite.get_height()
 
     #sfx
-    laserSound = pygame.mixer.Sound("assets/LaserPulseSevereEl PE431901_preview.mp3")#
-    laserSound.set_volume(0.2)#
-    bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+    #laserSound = pygame.mixer.Sound("assets/LaserPulseSevereEl PE431901_preview.mp3")#
+    #laserSound.set_volume(0.2)#
+    #bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
 
     def __init__(self):
         super().__init__()
@@ -158,16 +169,16 @@ class Player(Entity):
             if self.bulletCD <= 0:
                 self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
-                Player.bulletSound.play()
+                #Player.bulletSound.play()
         elif self.weapon == 1:
             if self.laserCD <= 0 and self.laserTime < self.laserDuration:
                 self.bullets.append(Laser(self.coords.copy(), 0))
                 self.laserTime += 1
-                Player.laserSound.play()
+                #Player.laserSound.play()
             elif self.laserTime >= self.laserDuration:
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
-                Player.laserSound.fadeout(300)
+                #Player.laserSound.fadeout(300)
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -407,9 +418,9 @@ def main():
     frametime = pygame.time.Clock()
   
     #music
-    pygame.mixer.music.load("assets/background.mp3")#
-    pygame.mixer.music.set_volume(0.1)#
-    pygame.mixer.music.play()# 
+    #pygame.mixer.music.load("assets/background.mp3")#
+    #pygame.mixer.music.set_volume(0.1)#
+    #pygame.mixer.music.play()# 
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
@@ -503,6 +514,8 @@ def playerBulletCore():
 def enemyCore(enemies):
     global spawnRate
     global spawnDelay
+    if stage.shop.active:
+        return
     numEnemies = 0
     if spawnDelay == 0:
         for x in enemies:
