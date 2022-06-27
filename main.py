@@ -100,7 +100,7 @@ class Shop():
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
             "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
-            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2], [0, 3]],
+            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
@@ -118,7 +118,7 @@ class Shop():
     def buy(self, item):
         if item in self.items:
             upgrade = self.items[item]
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2]:
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam"]):
                 upgrade[0] += 1
                 player.money -= upgrade[2]
                 for scale in range(len(upgrade[4])):
@@ -128,7 +128,9 @@ class Shop():
                         elif scale == 1:
                             upgrade[2] *= upgrade[3][1]
                         elif scale == 2:
-                            upgrade[2] **= upgrade[3][2]
+                            upgrade[2] = math.floor(upgrade[2] ** upgrade[3][2])
+                    else:
+                        break
                 if item == "Upgrade Laser Cannon Damage":
                     Bullet.damage += 0.25
                 elif item == "Upgrade Laser Cannon Cooldown":
@@ -140,16 +142,8 @@ class Shop():
                     self.items["Upgrade Laser Beam Damage"][0] = 1
                     self.items["Upgrade Laser Beam Duration"][0] = 1
                 elif item == "Upgrade Laser Beam Damage":
-                    if upgrade[0] == 1:
-                        upgrade[0] = 0
-                        player.money += upgrade[2]
-                        return
-                    Laser.damage += 0.25
+                    Laser.damage += 0.01
                 elif item == "Upgrade Laser Beam Duration":
-                    if upgrade[0] == 1:
-                        upgrade[0] = 0
-                        player.money += upgrade[2]
-                        return
                     player.laserDuration += 50
                 elif item == "Upgrade Shield Regen Speed":
                     player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
@@ -164,7 +158,7 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1):
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and not (self.items[key][0] == 0 and key not in ["Buy Laser Beam"]):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
@@ -172,7 +166,9 @@ class Shop():
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
             screen.blit(my_font.render('$'+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
-            if self.items[key][1] == -1:
+            if self.items[key][0] == 0 and key not in ["Buy Laser Beam"]:
+                screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+            elif self.items[key][1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
@@ -408,7 +404,7 @@ class Laser(PlayerProjectile):
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
-    damage = 0.5
+    damage = 0.05
 
     def __init__(self, coords, angle, speed=sprite.get_width()):
         super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
@@ -790,7 +786,7 @@ def main():
     while running:
 
         if stage.test:# put code for testing here
-            player.hp -= 1
+            player.money += 100
             pass
 
         screen.fill((0,0,0)) #Clears the screen
