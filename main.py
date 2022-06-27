@@ -120,15 +120,15 @@ class Shop():
             upgrade = self.items[item]
             if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam"]):
                 upgrade[0] += 1
-                player.money -= upgrade[2]
+                player.money -= int(upgrade[2])
                 for scale in range(len(upgrade[4])):
                     if upgrade[0] > upgrade[4][scale]:
                         if scale == 0:
                             upgrade[2] += upgrade[3][0]
                         elif scale == 1:
-                            upgrade[2] = int(upgrade[2] * upgrade[3][1])
+                            upgrade[2] = upgrade[2] * upgrade[3][1]
                         elif scale == 2:
-                            upgrade[2] = int(upgrade[2] ** upgrade[3][2])
+                            upgrade[2] = upgrade[2] ** upgrade[3][2]
                     else:
                         break
                 if item == "Upgrade Laser Cannon Damage":
@@ -165,7 +165,7 @@ class Shop():
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render('$'+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
             if self.items[key][0] == 0 and key not in ["Buy Laser Beam"]:
                 screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][1] == -1:
