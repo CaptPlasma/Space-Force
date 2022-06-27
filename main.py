@@ -92,6 +92,11 @@ class Player(Entity):
     shieldWidth = shieldSprite.get_width()
     shieldHeight = shieldSprite.get_height()
 
+    #sfx
+    laserSound = pygame.mixer.Sound("assets/LaserPulseSevereEl PE431901_preview.mp3")#
+    laserSound.set_volume(0.2)#
+    bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+
     def __init__(self):
         super().__init__()
         self.coords = [25, (scrn_h-Player.height)/2]
@@ -127,13 +132,16 @@ class Player(Entity):
             if self.bulletCD <= 0:
                 self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
+                Player.bulletSound.play()
         elif self.unlockedWeapons[self.weapon] == "Laser Beam":
             if self.laserCD <= 0 and self.laserTime < self.laserDuration:
                 self.bullets.append(Laser(self.coords.copy(), 0))
                 self.laserTime += 1
+                Player.laserSound.play()
             elif self.laserTime >= self.laserDuration:
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
+                Player.laserSound.fadeout(300)
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -359,6 +367,10 @@ def main():
     
     frametime = pygame.time.Clock()
   
+    #music
+    pygame.mixer.music.load("assets/background.mp3")#
+    pygame.mixer.music.set_volume(0.1)#
+    pygame.mixer.music.play()# 
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
@@ -400,6 +412,7 @@ def main():
         elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
                 player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
                 player.laserTime = 0
+                Player.laserSound.fadeout(300)
         
         if keyPressCD != 0:
             keyPressCD -= 1
