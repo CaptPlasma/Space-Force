@@ -126,9 +126,9 @@ class Shop():
                         if scale == 0:
                             upgrade[2] += upgrade[3][0]
                         elif scale == 1:
-                            upgrade[2] *= upgrade[3][1]
+                            upgrade[2] = int(upgrade[2] * upgrade[3][1])
                         elif scale == 2:
-                            upgrade[2] = math.floor(upgrade[2] ** upgrade[3][2])
+                            upgrade[2] = int(upgrade[2] ** upgrade[3][2])
                     else:
                         break
                 if item == "Upgrade Laser Cannon Damage":
