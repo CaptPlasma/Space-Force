@@ -35,6 +35,8 @@ class Stage():
         self.spawned = 0
         self.stageEnd = 300
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        if self.level%5 == 0:
+            Enemy.hpMulti += 0.2
     
     def update(self):
 
@@ -52,9 +54,9 @@ class Stage():
 class Shop():
     def __init__(self):
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Buy Laser Beam": [0, 1, 10000, [], []],
-            "Upgrade Laser Cannon": [0, -1, 1000, [100, 1.1], [0, 10]],
-            "Upgrade Laser Beam": [0, -1, 15000, [1000, 1.2], [0, 10]]
+            "Buy Laser Beam": [0, 1, 5000, [], []],
+            "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]]
         }
     
     def buy(self, item):
@@ -72,10 +74,10 @@ class Shop():
                             upgrade[2] **= upgrade[3][2]
                 if item == "Buy Laser Beam":
                     player.unlockedWeapons.insert(1, "Laser Beam")
-                elif item == "Upgrade Laser Cannon":
-                    pass
-                elif item == "Upgrade Laser Beam":
-                    pass
+                elif item == "Upgrade Laser Cannon Damage":
+                    Bullet.damage += 0.5
+                elif item == "Upgrade Laser Beam Damage":
+                    Laser.damage += 0.25
 
     def display(self):
         pass
@@ -182,6 +184,7 @@ class Bullet(PlayerProjectile):
     sprite = pygame.image.load("assets/playerBullet.png")
     width = sprite.get_width()
     height = sprite.get_height()
+    damage = 1
 
     def __init__(self, coords, speed, angle):
         super().__init__(coords, speed, angle)
@@ -200,6 +203,7 @@ class Laser(PlayerProjectile):
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
+    damage = 0.5
 
     def __init__(self, coords, angle, speed=sprite.get_width()):
         super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
@@ -216,6 +220,8 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Enemy(Entity):
+    hpMulti = 1
+
     def __init__(self):
         super().__init__()
 
@@ -223,6 +229,7 @@ class Strafer(Enemy):
     sprite = pygame.image.load("assets/Ship.png")                                                   #change this
     bounty = 100
     speed = 1
+    hp = 1*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
 
@@ -240,7 +247,9 @@ class Strafer(Enemy):
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
-            self.dead = True
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
       
     def update(self):
         self.move()
@@ -251,7 +260,7 @@ class BlueTurret(Enemy):
     bounty = 150
     speed = 0.5
     firerate = 300
-    hp = 3
+    hp = 3*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
 
@@ -275,8 +284,8 @@ class BlueTurret(Enemy):
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
-            self.hp -= 1
-            if self.hp == 0:
+            self.hp -= other.damage
+            if self.hp <= 0:
                 self.dead = True
     
     def update(self):
@@ -316,6 +325,7 @@ class SuicideEnemy(Enemy):
     sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
     bounty = 250
     speed = 10
+    hp = 0.5*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
     prepTime = 500
@@ -336,8 +346,13 @@ class SuicideEnemy(Enemy):
                 self.dead = True
 
     def collide(self, other):
-        if isinstance(other, PlayerProjectile) or isinstance(other, Player):
+        if isinstance(other, Player):
+            self.hp = 0
             self.dead = True
+        elif isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
 
     def update(self):
         if self.time:
