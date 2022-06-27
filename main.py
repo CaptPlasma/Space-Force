@@ -29,6 +29,7 @@ class Stage():
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
+        self.test = False
         self.shop = Shop()
         self.title = Title()
     
@@ -639,7 +640,6 @@ def main():
 
     coolDown = 0
     activeWeapon = 0
-    keyPressCD = 0
 
     running = True
     
@@ -664,7 +664,7 @@ def main():
     cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
     ##########
 
-    
+
 
     # main loop
     while running:
@@ -717,9 +717,6 @@ def main():
                 player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
                 player.laserTime = 0
                 Player.laserSound.fadeout(300)
-        
-        if keyPressCD != 0:
-            keyPressCD -= 1
 
         enemyCore(stage.enemies)
         playerBulletCore()
@@ -869,12 +866,7 @@ def enemyMove(enemies):
 def renderHUD(coolDown, activeWeapon, fps):
         if stage.title.active:
             return
-        if player.getWeapon() == 0:
-            #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Cannon Active", False, (255, 255, 255))
-        elif player.getWeapon() == 1:
-            #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Beam Active", False, (255, 255, 255))
+        activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", False, (255, 255, 255))
         if player.money < 10:
             money = my_font.render("$0.0"+str(player.money), False, (255, 255, 255))
         elif player.money < 100:
