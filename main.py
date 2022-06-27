@@ -60,14 +60,16 @@ class Shop():
     def __init__(self):
         self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Buy Laser Beam": [0, 1, 5000, [], []],
             "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Cannon Cooldown": [0, 8, 3000, [0, 1.5], [0, 0]],
+            "Buy Laser Beam": [0, 1, 5000, [], []],
             "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
             "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
         }
         self.itemKeys = [
-            "Buy Laser Beam",
             "Upgrade Laser Cannon Damage",
+            "Upgrade Laser Cannon Cooldown",
+            "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration"
         ]
@@ -76,8 +78,9 @@ class Shop():
     def buy(self, item):
         if item in self.items:
             upgrade = self.items[item]
-            if upgrade[0] < upgrade[1] and player.money >= upgrade[2]:
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2]:
                 upgrade[0] += 1
+                player.money -= upgrade[2]
                 for scale in range(len(upgrade[4])):
                     if upgrade[0] > upgrade[4][scale]:
                         if scale == 0:
@@ -86,10 +89,12 @@ class Shop():
                             upgrade[2] *= upgrade[3][1]
                         elif scale == 2:
                             upgrade[2] **= upgrade[3][2]
-                if item == "Buy Laser Beam":
-                    player.unlockedWeapons.insert(1, "Laser Beam")
-                elif item == "Upgrade Laser Cannon Damage":
+                if item == "Upgrade Laser Cannon Damage":
                     Bullet.damage += 0.5
+                elif item == "Upgrade Laser Cannon Cooldown":
+                    player.bullet_firerate -= 100
+                elif item == "Buy Laser Beam":
+                    player.unlockedWeapons.insert(1, "Laser Beam")
                 elif item == "Upgrade Laser Beam Damage":
                     Laser.damage += 0.25
                 elif item == "Upgrade Laser Beam Duration":
