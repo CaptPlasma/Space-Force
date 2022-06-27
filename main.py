@@ -45,7 +45,7 @@ class Stage():
 
         # boss rewards
         if self.level%5 == 0:
-            Enemy.hpMulti += 0.2
+            Enemy.hpMulti += 0.5
             player.moneyMulti += 0.1
 
         # unlock enemies
@@ -96,11 +96,11 @@ class Shop():
     def __init__(self):
         self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Upgrade Laser Cannon Damage": [1, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.05], [0, 0, 3]],
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
             "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
-            "Upgrade Laser Beam Damage": [0, -1, 10000, [1000, 1.2], [0, 10]],
+            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2], [0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
@@ -130,7 +130,7 @@ class Shop():
                         elif scale == 2:
                             upgrade[2] **= upgrade[3][2]
                 if item == "Upgrade Laser Cannon Damage":
-                    Bullet.damage += 0.5
+                    Bullet.damage += 0.25
                 elif item == "Upgrade Laser Cannon Cooldown":
                     player.bullet_firerate -= 10
                 elif item == "Upgrade Laser Cannon Speed":
@@ -164,7 +164,7 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and self.items[key][0] < self.items[key][1]:
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
@@ -592,7 +592,7 @@ class SuicideEnemy(Enemy):
         screen.blit(SuicideEnemy.sprite, self.coords)
 
 class Fleet(Enemy):
-    bounty = 500
+    bounty = 250
     speed = 1
 
     def __init__(self):
@@ -631,7 +631,7 @@ class Fleet(Enemy):
 
 class Fighter(Enemy):
     sprite = pygame.image.load("assets/Ship.png")
-    bounty = 100
+    bounty = 20
     speed = 1
     width = sprite.get_width()
     height = sprite.get_height()
