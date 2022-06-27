@@ -74,8 +74,8 @@ class Shop():
             "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
             "Upgrade Laser Cannon Cooldown": [0, 8, 3000, [0, 1.5], [0, 0]],
             "Upgrade Laser Cannon Speed": [0, 10, 500, [100], [0]],
-            "Buy Laser Beam": [0, 1, 5000, [], []],
-            "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
+            "Buy Laser Beam": [0, 1, 10000, [], []],
+            "Upgrade Laser Beam Damage": [0, -1, 10000, [1000, 1.2], [0, 10]],
             "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
         }
         self.itemKeys = [
