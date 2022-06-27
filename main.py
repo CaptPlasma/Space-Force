@@ -24,9 +24,11 @@ class Stage():
         self.toSpawn = 10
         self.spawned = 0
         self.stageEnd = 0
+        self.shopping = False
         self.level = 0
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
+        self.shop = Shop()
     
     def advance(self):
         self.level += 1
@@ -42,7 +44,9 @@ class Stage():
 
         screen.blit(self.background, (0,0))
 
-        if self.stageEnd > 0:
+        if self.shopping:
+            self.shop.display()
+        elif self.stageEnd > 0:
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0:
@@ -414,8 +418,6 @@ def main():
     stage = Stage()
      
     player = Player()
-
-    shop = Shop()
 
     # main loop
     while running:
