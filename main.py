@@ -158,7 +158,7 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and not (self.items[key][0] == 0 and key not in ["Buy Laser Beam"]):
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam"]):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
