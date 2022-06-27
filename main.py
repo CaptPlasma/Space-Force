@@ -236,14 +236,14 @@ class Player(Entity):
     #sfx
     laserSound = pygame.mixer.Sound("assets/laser.wav")#
     laserSound.set_volume(0.2)
-    bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+    bulletSound = pygame.mixer.Sound("assets/bullet.wav")#
     shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
     shipHit.set_volume(0.3)
     shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
     shieldHit.set_volume(0.2)
     reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
     reloadSound.set_volume(0.1)
-    shieldBreak = pygame.mixer.Sound("assets/break.wav")
+    shieldBreak = pygame.mixer.Sound("assets/shield_break.wav")
     shieldBreak.set_volume(0.5)
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
     shipExplode.set_volume(0.5)
