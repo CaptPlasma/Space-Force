@@ -1,5 +1,3 @@
-from glob import glob
-from turtle import width
 import pygame, random, math
  
 pygame.init()
