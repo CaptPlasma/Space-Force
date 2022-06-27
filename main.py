@@ -96,7 +96,7 @@ class Shop():
 
     def display(self):
         x_offset = 100
-        y_offset = 100
+        y_offset = 150
         button_w = 500
         button_h = 50
         spacing_w = 50
@@ -727,7 +727,7 @@ def renderHUD(coolDown, activeWeapon, fps):
         #screen.blit(CDtext, (10,0))
         screen.blit(activeWeaponText, (10, 90))
         screen.blit(frameRate, (1865, 0))
-        screen.blit(money, (500,0))
+        screen.blit(money, (600,0))
 
      
 # run the main function only if this module is executed as the main script
