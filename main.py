@@ -27,7 +27,7 @@ class Stage():
         self.enemyProgression = 1
         self.level = 1
         self.bossDead = False
-        self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
         self.enemies = []
         self.shop = Shop()
         self.title = Title()
@@ -40,7 +40,7 @@ class Stage():
         self.spawned = 0
         self.shop.active = True
         self.stageEnd = 300
-        self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
 
         # boss rewards
         if self.level%5 == 0:
@@ -161,14 +161,14 @@ class Shop():
                 color = (220, 220, 220)
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
-            screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render("$"+str(self.items[key][2]), False, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
+            screen.blit(my_font.render("$"+str(self.items[key][2]), True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
             if self.items[key][1] == -1:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), False, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), False, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
             elif self.items[key][0] >= self.items[key][1]:
-                screen.blit(my_font.render("Lv. MAX", False, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+                screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
             x_offset += button_w + spacing_w
             if x_offset + button_w + 100 > scrn_w:
                 x_offset = 150
@@ -623,8 +623,8 @@ class Bar():
             return
         pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(self.x, self.y, self.w, self.h))
         pygame.draw.rect(screen, self.color, pygame.Rect(self.x, self.y, (self.value/self.maxvalue)*self.w,self.h))
-        barText = my_font.render(self.title, False, (255, 255, 255))
-        screen.blit(barText, (self.x+self.w+15, self.y))
+        barText = my_font.render(self.title, True, (255, 255, 255))
+        screen.blit(barText, (self.x+self.w+15, self.y - 5))
 
         if (self.notch):
             for x in range(self.maxvalue):
@@ -652,16 +652,16 @@ def main():
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
-    screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
+    screen = pygame.display.set_mode((1920,1080))#, pygame.FULLSCREEN|pygame.SCALED)
 
     stage = Stage()
      
     player = Player()
 
     ##########
-    health_bar = Bar(15, 0, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
-    shield_bar = Bar(15, 40, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
-    cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
+    health_bar = Bar(15, 10, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
+    shield_bar = Bar(15, 55, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
+    cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
     
@@ -871,27 +871,19 @@ def renderHUD(coolDown, activeWeapon, fps):
             return
         if player.getWeapon() == 0:
             #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Cannon Active", False, (255, 255, 255))
+            activeWeaponText = my_font.render("Laser Cannon Active", True, (255, 255, 255))
         elif player.getWeapon() == 1:
             #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
-            activeWeaponText = my_font.render("Laser Beam Active", False, (255, 255, 255))
-        if player.money < 10:
-            money = my_font.render("$0.0"+str(player.money), False, (255, 255, 255))
-        elif player.money < 100:
-            money = my_font.render("$0."+str(player.money), False, (255, 255, 255))
-        else:
-            money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], False, (255, 255, 255))
-
-        frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
+            activeWeaponText = my_font.render("Laser Beam Active", True, (255, 255, 255))
+        money = my_font.render("$"+str("{:,}".format(player.money))+".00", True, (255, 255, 255))
+        frameRate = my_font.render(str(int(fps)), True, (0, 255, 0))
 
         #screen.blit(CDtext, (10,0))
-        screen.blit(activeWeaponText, (10, 90))
+        screen.blit(activeWeaponText, (15, 90))
         screen.blit(frameRate, (1865, 0))
         screen.blit(money, (600,0))
 
      
-# run the main function only if this module is executed as the main script
-# (if you import this as a module then nothing is executed)
 if __name__=="__main__":
     # call the main function
     main() 
