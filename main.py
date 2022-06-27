@@ -62,7 +62,7 @@ class Player(Entity):
     shieldHeight = shieldSprite.get_height()
 
     #sfx
-    laserSound = pygame.mixer.Sound("assets/LaserPulseSevereEl PE431901_preview.mp3")#
+    laserSound = pygame.mixer.Sound("assets/laser.wav")#
     laserSound.set_volume(0.2)
     bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
     shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
