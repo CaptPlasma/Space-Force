@@ -163,7 +163,7 @@ class Shop():
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render("$"+str(self.items[key][2]), False, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            screen.blit(my_font.render("$"+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], False, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
             if self.items[key][1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0]), False, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
