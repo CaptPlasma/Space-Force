@@ -1,3 +1,5 @@
+from glob import glob
+from turtle import width
 import pygame, random, math
  
 pygame.init()
@@ -19,7 +21,7 @@ for x in range(12):
 
 class Stage():
     def __init__(self):
-        self.background = pygame.image.load("assets/background.jpg")
+        self.background = pygame.image.load("assets/background.png")
         self.enemyCap = 10
         self.toSpawn = 10
         self.spawned = 0
@@ -30,7 +32,9 @@ class Stage():
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
         self.shop = Shop()
+        self.title = Title()
     
+
     def advance(self):
         self.level += 1
         self.enemyCap = 5+math.ceil(self.level**.5)*5
@@ -56,10 +60,13 @@ class Stage():
         self.enemies.append(random.choice(bossTypes.copy()))
     
     def update(self):
-
+        global titleActive
         screen.blit(self.background, (0,0))
 
-        if self.shop.active:
+
+        if self.title.active:
+            self.title.update()
+        elif self.shop.active:
             self.shop.update()
         elif self.stageEnd > 0:
             self.stageEnd -= 1
@@ -80,7 +87,7 @@ class Stage():
 
 class Shop():
     def __init__(self):
-        self.active = True
+        self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
             "Upgrade Laser Cannon Damage": [1, -1, 1000, [100, 1.1], [0, 10]],
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
@@ -187,6 +194,33 @@ class Shop():
             self.active = False
         self.detectClick()
         self.display()
+
+
+class Title():
+    def __init__(self):
+        self.active = True
+        self.titleFont = pygame.font.Font("assets/fonts/IshimuraRegular.otf", 108)
+        self.contFont = pygame.font.Font("assets/fonts/IshimuraRegular.otf", 44)
+
+    def display(self):
+        title = self.titleFont.render("Bootleg Space Invaders", True, (249,4,5))
+        cont = self.contFont.render("Press Enter to Continue!", True, (255, 255, 255))
+        tW = title.get_rect().width
+        contW = cont.get_rect().width
+        contH = cont.get_rect().height
+        screen.blit(title, (960-(tW//2),25))
+
+        screen.blit(cont, (960-(contW//2), 540 - (contH//2)))
+
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            self.active = False
+        self.display()
+
+
+
 
 class Entity():
     def __init__(self):
@@ -379,7 +413,7 @@ class Enemy(Entity):
         super().__init__()
 
 class Strafer(Enemy):
-    sprite = pygame.image.load("assets/Ship.png")                                                   #change this
+    sprite = pygame.image.load("assets/cargoShip.png")                                                   #change this
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -410,7 +444,7 @@ class Strafer(Enemy):
         screen.blit(Strafer.sprite, self.coords)
 
 class BlueTurret(Enemy):
-    sprite = pygame.image.load("assets/Shield.png")                                                 #change this
+    sprite = pygame.image.load("assets/blueTurret.png")                                                 #change this
     bounty = 150
     speed = 0.5
     firerate = 300
@@ -533,7 +567,7 @@ class Boss(Enemy):
                 stage.bossDead = True
 
 class MegaShip(Boss):
-    sprite = pygame.image.load("assets/Ship.png")                                                                         #change this
+    sprite = pygame.image.load("assets/redBoss.png")                                                                         #change this
     firerate = 100
     suicide_firerate = 500
     speed = 0.5
@@ -587,6 +621,8 @@ class Bar():
         self.color = color
 
     def display(self):
+        if stage.title.active:
+            return
         pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(self.x, self.y, self.w, self.h))
         pygame.draw.rect(screen, self.color, pygame.Rect(self.x, self.y, (self.value/self.maxvalue)*self.w,self.h))
         barText = my_font.render(self.title, False, (255, 255, 255))
@@ -618,7 +654,7 @@ def main():
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
-    screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
+    screen = pygame.display.set_mode((1920,1080))#, pygame.FULLSCREEN|pygame.SCALED)
 
     stage = Stage()
      
@@ -630,11 +666,16 @@ def main():
     cooldown_bar = Bar(250, 0, 120, 50, "Cooldown")
     ##########
 
+    
+
     # main loop
     while running:
         screen.fill((0,0,0)) #Clears the screen
-  
+
+        
         stage.update()
+
+        
 
         player.update()
 
@@ -660,7 +701,7 @@ def main():
                 running = False
             if event.type == pygame.MOUSEWHEEL:
                 player.switchWeapon(player.getWeapon()+event.y*-1)
-     
+    
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
             player.coords[1] -= player.speed
@@ -687,13 +728,14 @@ def main():
         explosionCore(explosions)
 
         renderHUD(coolDown, activeWeapon, frametime.get_fps())
+        
         pygame.display.flip()
         frametime.tick(120)
 
 def explosionCore(explosions):
     for x in explosions:
         if x[0] % 2 == 0:
-            screen.blit(explosionSprites[x[0]//2], (x[1], x[2]))
+            screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2]))
         x[0] += 1
         if x[0] > 22:
             explosions.remove(x)
@@ -731,7 +773,7 @@ def playerBulletCore():
 def enemyCore(enemies):
     global spawnRate
     global spawnDelay
-    if stage.shop.active:
+    if stage.shop.active or stage.title.active:
         return
     numEnemies = 0
     if spawnDelay == 0:
@@ -827,7 +869,8 @@ def enemyMove(enemies):
             x.update()
 
 def renderHUD(coolDown, activeWeapon, fps):
-        
+        if stage.title.active:
+            return
         if player.getWeapon() == 0:
             #CDtext = my_font.render(str(player.bulletCD), False, (255, 255, 255))
             activeWeaponText = my_font.render("Laser Cannon Active", False, (255, 255, 255))
