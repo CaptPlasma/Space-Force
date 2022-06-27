@@ -23,8 +23,9 @@ class Stage():
         self.enemyCap = 10
         self.toSpawn = 10
         self.spawned = 0
-        self.stageEnd = 0
-        self.level = 0
+        self.stageEnd = 300
+        self.enemyProgression = 1
+        self.level = 1
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
@@ -38,12 +39,21 @@ class Stage():
         self.shop.active = True
         self.stageEnd = 300
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+
+        # boss rewards
         if self.level%5 == 0:
             Enemy.hpMulti += 0.2
             player.moneyMulti += 0.1
 
+        # unlock enemies
+        if self.level == 2:
+            self.enemyProgression = 2
+        if self.level == 6:
+            self.enemyProgression = 3
+
     def spawnBoss(self):
-        self.enemies.append(random.choice(bossTypes))
+        bossTypes = [MegaShip()]
+        self.enemies.append(random.choice(bossTypes.copy()))
     
     def update(self):
 
@@ -55,6 +65,7 @@ class Stage():
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0 and self.spawned >= self.toSpawn:
+            print(self.level)
             if self.level%5 == 0:
                 if self.bossDead:
                     self.advance()
@@ -109,7 +120,7 @@ class Shop():
                 elif item == "Upgrade Laser Cannon Speed":
                     player.bulletSpeed += 3
                 elif item == "Buy Laser Beam":
-                    player.unlockedWeapons.insert(1, "Laser Beam")
+                    player.unlockedWeapons.append("Laser Beam")
                 elif item == "Upgrade Laser Beam Damage":
                     Laser.damage += 0.25
                 elif item == "Upgrade Laser Beam Duration":
@@ -151,7 +162,7 @@ class Shop():
 
     def update(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_RETURN]:
             self.active = False
         self.detectClick()
         self.display()
@@ -221,16 +232,16 @@ class Player(Entity):
             if self.bulletCD <= 0:
                 self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
-                #Player.bulletSound.play()
+                Player.bulletSound.play()
         elif self.unlockedWeapons[self.weapon] == "Laser Beam":
             if self.laserCD <= 0 and self.laserTime < self.laserDuration:
                 self.bullets.append(Laser(self.coords.copy(), 0))
                 self.laserTime += 1
-                #Player.laserSound.play()
+                Player.laserSound.play()
             elif self.laserTime >= self.laserDuration:
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
-                #Player.laserSound.fadeout(300)
+                Player.laserSound.fadeout(300)
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -567,9 +578,6 @@ class Bar():
     def update(self, val):
         self.value = val
 
-enemyTypes = [Strafer(), BlueTurret(), SuicideEnemy()]
-bossTypes = [MegaShip()]
-
 # define a main function
 def main():
     global screen, stage, player
@@ -710,7 +718,8 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
-            enemies.append(random.choice([Strafer(), BlueTurret(), SuicideEnemy()]))
+            enemyTypes = [Strafer(), BlueTurret(), SuicideEnemy()]
+            enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
             stage.spawned += 1
             spawnDelay = spawnRate
 
