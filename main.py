@@ -251,7 +251,7 @@ class BlueTurret(Enemy):
     hp = 3
     width = sprite.get_width()
     height = sprite.get_height()
-    bulletSound = pygame.mixer.Sound("assets/shoot02wav-14562.mp3")
+    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
     bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
