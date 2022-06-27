@@ -62,6 +62,7 @@ class Shop():
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
             "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
             "Upgrade Laser Cannon Cooldown": [0, 8, 3000, [0, 1.5], [0, 0]],
+            "Upgrade Laser Cannon Speed": [0, 10, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 5000, [], []],
             "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
             "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
@@ -69,6 +70,7 @@ class Shop():
         self.itemKeys = [
             "Upgrade Laser Cannon Damage",
             "Upgrade Laser Cannon Cooldown",
+            "Upgrade Laser Cannon Speed"
             "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration"
@@ -93,6 +95,8 @@ class Shop():
                     Bullet.damage += 0.5
                 elif item == "Upgrade Laser Cannon Cooldown":
                     player.bullet_firerate -= 100
+                elif item == "Upgrade Laser Cannon Speed":
+                    player.bulletSpeed += 3
                 elif item == "Buy Laser Beam":
                     player.unlockedWeapons.insert(1, "Laser Beam")
                 elif item == "Upgrade Laser Beam Damage":
