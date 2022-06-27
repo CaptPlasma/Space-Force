@@ -80,14 +80,15 @@ class Stage():
 
 class Shop():
     def __init__(self):
-        self.active = False
+        self.active = True
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
-            "Upgrade Laser Cannon Cooldown": [0, 8, 3000, [0, 1.5], [0, 0]],
-            "Upgrade Laser Cannon Speed": [0, 10, 500, [100], [0]],
+            "Upgrade Laser Cannon Damage": [1, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
+            "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
             "Upgrade Laser Beam Damage": [0, -1, 10000, [1000, 1.2], [0, 10]],
-            "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
+            "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
+            "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
         self.itemKeys = [
             "Upgrade Laser Cannon Damage",
@@ -95,7 +96,8 @@ class Shop():
             "Upgrade Laser Cannon Speed"
             "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
-            "Upgrade Laser Beam Duration"
+            "Upgrade Laser Beam Duration",
+            "Upgrade Shield Regen Speed"
         ]
         self.clickToggle = False
     
@@ -121,16 +123,28 @@ class Shop():
                     player.bulletSpeed += 3
                 elif item == "Buy Laser Beam":
                     player.unlockedWeapons.append("Laser Beam")
+                    self.items["Upgrade Laser Beam Damage"][0] = 1
+                    self.items["Upgrade Laser Beam Duration"][0] = 1
                 elif item == "Upgrade Laser Beam Damage":
+                    if upgrade[0] == 1:
+                        upgrade[0] = 0
+                        player.money += upgrade[2]
+                        return
                     Laser.damage += 0.25
                 elif item == "Upgrade Laser Beam Duration":
+                    if upgrade[0] == 1:
+                        upgrade[0] = 0
+                        player.money += upgrade[2]
+                        return
                     player.laserDuration += 50
+                elif item == "Upgrade Shield Regen Speed":
+                    player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
     def display(self):
-        x_offset = 100
+        x_offset = 150
         y_offset = 150
         button_w = 500
-        button_h = 50
+        button_h = 100
         spacing_w = 50
         spacing_h = 50
         self.buttons = []
@@ -143,9 +157,16 @@ class Shop():
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
+            screen.blit(my_font.render("$"+str(self.items[key][2]), False, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            if self.items[key][1] == -1:
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), False, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+            elif self.items[key][0] < self.items[key][1]:
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), False, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+            elif self.items[key][0] >= self.items[key][1]:
+                screen.blit(my_font.render("MAX", False, (0, 0, 0), self.buttons[button].copy().move(350, 50)))
             x_offset += button_w + spacing_w
             if x_offset + button_w + 100 > scrn_w:
-                x_offset = 100
+                x_offset = 150
                 y_offset += button_h + spacing_h
             button += 1
 
