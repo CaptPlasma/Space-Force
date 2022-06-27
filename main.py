@@ -29,6 +29,7 @@ class Stage():
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
         self.enemies = []
+        self.test = False
         self.shop = Shop()
         self.title = Title()
     
@@ -235,14 +236,14 @@ class Player(Entity):
     #sfx
     laserSound = pygame.mixer.Sound("assets/laser.wav")#
     laserSound.set_volume(0.2)
-    bulletSound = pygame.mixer.Sound("assets/mixkit-short-laser-gun-shot-1670.wav")#
+    bulletSound = pygame.mixer.Sound("assets/bullet.wav")#
     shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
     shipHit.set_volume(0.3)
     shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
     shieldHit.set_volume(0.2)
     reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
     reloadSound.set_volume(0.1)
-    shieldBreak = pygame.mixer.Sound("assets/break.wav")
+    shieldBreak = pygame.mixer.Sound("assets/shield_break.wav")
     shieldBreak.set_volume(0.5)
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
     shipExplode.set_volume(0.5)
@@ -639,7 +640,6 @@ def main():
 
     coolDown = 0
     activeWeapon = 0
-    keyPressCD = 0
 
     running = True
     
@@ -664,7 +664,7 @@ def main():
     cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
-    
+
 
     # main loop
     while running:
@@ -717,9 +717,6 @@ def main():
                 player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
                 player.laserTime = 0
                 Player.laserSound.fadeout(300)
-        
-        if keyPressCD != 0:
-            keyPressCD -= 1
 
         enemyCore(stage.enemies)
         playerBulletCore()
@@ -877,7 +874,6 @@ def renderHUD(coolDown, activeWeapon, fps):
             activeWeaponText = my_font.render("Laser Beam Active", True, (255, 255, 255))
         money = my_font.render("$"+str("{:,}".format(player.money))+".00", True, (255, 255, 255))
         frameRate = my_font.render(str(int(fps)), True, (0, 255, 0))
-
         #screen.blit(CDtext, (10,0))
         screen.blit(activeWeaponText, (15, 90))
         screen.blit(frameRate, (1865, 0))
