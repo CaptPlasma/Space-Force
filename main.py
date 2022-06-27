@@ -27,27 +27,113 @@ class Stage():
         self.level = 0
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
         self.enemies = []
+        self.shop = Shop()
     
     def advance(self):
         self.level += 1
         self.enemyCap = 5+math.ceil(self.level**.5)*5
         self.toSpawn = 9+self.level
         self.spawned = 0
+        self.shop.active = True
         self.stageEnd = 300
         self.changeText = my_font.render("Stage "+str(self.level), False, (255, 255, 255))
+        if self.level%5 == 0:
+            Enemy.hpMulti += 0.2
     
     def update(self):
 
         screen.blit(self.background, (0,0))
 
-        if self.stageEnd > 0:
+        if self.shop.active:
+            self.shop.update()
+        elif self.stageEnd > 0:
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0:
             self.advance()
-        
-        for enemy in range(len(self.enemies)):
-            self.enemies[enemy].update()
+        else:
+            for enemy in range(len(self.enemies)):
+                self.enemies[enemy].update()
+
+class Shop():
+    def __init__(self):
+        self.active = False
+        self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
+            "Buy Laser Beam": [0, 1, 5000, [], []],
+            "Upgrade Laser Cannon Damage": [0, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Beam Damage": [0, -1, 5000, [1000, 1.2], [0, 10]],
+            "Upgrade Laser Beam Duration": [0, 10, 100000, [0, 2], [0, 0]]
+        }
+        self.itemKeys = [
+            "Buy Laser Beam",
+            "Upgrade Laser Cannon Damage",
+            "Upgrade Laser Beam Damage",
+            "Upgrade Laser Beam Duration"
+        ]
+        self.clickToggle = False
+    
+    def buy(self, item):
+        if item in self.items:
+            upgrade = self.items[item]
+            if upgrade[0] < upgrade[1] and player.money >= upgrade[2]:
+                upgrade[0] += 1
+                for scale in range(len(upgrade[4])):
+                    if upgrade[0] > upgrade[4][scale]:
+                        if scale == 0:
+                            upgrade[2] += upgrade[3][0]
+                        elif scale == 1:
+                            upgrade[2] *= upgrade[3][1]
+                        elif scale == 2:
+                            upgrade[2] **= upgrade[3][2]
+                if item == "Buy Laser Beam":
+                    player.unlockedWeapons.insert(1, "Laser Beam")
+                elif item == "Upgrade Laser Cannon Damage":
+                    Bullet.damage += 0.5
+                elif item == "Upgrade Laser Beam Damage":
+                    Laser.damage += 0.25
+                elif item == "Upgrade Laser Beam Duration":
+                    player.laserDuration += 50
+
+    def display(self):
+        x_offset = 100
+        y_offset = 100
+        button_w = 500
+        button_h = 50
+        spacing_w = 50
+        spacing_h = 50
+        self.buttons = []
+        button = 0
+        for key in self.items:
+            if player.money >= self.items[key][2] and self.items[key][0] < self.items[key][1]:
+                color = (0, 255, 0)
+            else:
+                color = (220, 220, 220)
+            self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
+            pygame.draw.rect(screen, color, self.buttons[button])
+            screen.blit(my_font.render(key, False, (0, 0, 0)), self.buttons[button])
+            x_offset += button_w + spacing_w
+            if x_offset + button_w + 100 > scrn_w:
+                x_offset = 100
+                y_offset += button_h + spacing_h
+            button += 1
+
+    def detectClick(self):
+        pos = pygame.mouse.get_pos()
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0] and not self.clickToggle:
+            self.clickToggle = True
+            for button in range(len(self.buttons)):
+                if self.buttons[button].collidepoint(pos):
+                    self.buy(self.itemKeys[button])
+        elif not mouse[0]:
+            self.clickToggle = False
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            self.active = False
+        self.detectClick()
+        self.display()
 
 class Entity():
     def __init__(self):
@@ -91,8 +177,10 @@ class Player(Entity):
         self.bullets = []
         self.bulletSpeed = 20
         self.weapon = 0
-        self.unlockedWeapons = 2
+        self.unlockedWeapons = ["Laser Cannon"]
         self.invTime = 0
+        self.money=0
+        self.moneyMulti = 1
 
     def getWeapon(self):
         return self.weapon
@@ -100,25 +188,25 @@ class Player(Entity):
     def switchWeapon(self, slot):
         self.weapon = slot
         if self.weapon < 0:
-            self.weapon = self.unlockedWeapons-1
-        elif self.weapon >= self.unlockedWeapons:
+            self.weapon = len(self.unlockedWeapons)-1
+        elif self.weapon >= len(self.unlockedWeapons):
             self.weapon = 0
 
     def shoot(self):
-        if self.weapon == 0:
+        if self.unlockedWeapons[self.weapon] == "Laser Cannon":
             if self.bulletCD <= 0:
                 self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
-                Player.bulletSound.play()
-        elif self.weapon == 1:
+                #Player.bulletSound.play()
+        elif self.unlockedWeapons[self.weapon] == "Laser Beam":
             if self.laserCD <= 0 and self.laserTime < self.laserDuration:
                 self.bullets.append(Laser(self.coords.copy(), 0))
                 self.laserTime += 1
-                Player.laserSound.play()
+                #Player.laserSound.play()
             elif self.laserTime >= self.laserDuration:
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
-                Player.laserSound.fadeout(300)
+                #Player.laserSound.fadeout(300)
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -142,6 +230,9 @@ class Player(Entity):
                     Player.shipExplode.play()
                 else:
                     Player.shipHit.play()
+
+    def earn(self, amt):
+        self.money += amt*self.moneyMulti
 
     def update(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -177,6 +268,7 @@ class Bullet(PlayerProjectile):
     sprite = pygame.image.load("assets/playerBullet.png")
     width = sprite.get_width()
     height = sprite.get_height()
+    damage = 1
 
     def __init__(self, coords, speed, angle):
         super().__init__(coords, speed, angle)
@@ -195,6 +287,7 @@ class Laser(PlayerProjectile):
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
+    damage = 0.5
 
     def __init__(self, coords, angle, speed=sprite.get_width()):
         super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
@@ -211,6 +304,7 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Enemy(Entity):
+    hpMulti = 1
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
     shipExplode.set_volume(0.5)
 
@@ -219,7 +313,9 @@ class Enemy(Entity):
 
 class Strafer(Enemy):
     sprite = pygame.image.load("assets/Ship.png")                                                   #change this
+    bounty = 100
     speed = 1
+    hp = 1*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
 
@@ -237,7 +333,9 @@ class Strafer(Enemy):
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
-            self.dead = True
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
             Enemy.shipExplode.play()
       
     def update(self):
@@ -246,9 +344,10 @@ class Strafer(Enemy):
 
 class BlueTurret(Enemy):
     sprite = pygame.image.load("assets/Shield.png")                                                 #change this
+    bounty = 150
     speed = 0.5
     firerate = 300
-    hp = 3
+    hp = 3*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
     bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
@@ -275,8 +374,8 @@ class BlueTurret(Enemy):
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
-            self.hp -= 1
-            if self.hp == 0:
+            self.hp -= other.damage
+            if self.hp <= 0:
                 self.dead = True
                 Enemy.shipExplode.play()
     
@@ -315,7 +414,9 @@ class EnemyBullet(EnemyProjectile):
 
 class SuicideEnemy(Enemy):
     sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
+    bounty = 250
     speed = 10
+    hp = 0.5*Enemy.hpMulti
     width = sprite.get_width()
     height = sprite.get_height()
     prepTime = 500
@@ -336,9 +437,14 @@ class SuicideEnemy(Enemy):
                 self.dead = True
 
     def collide(self, other):
-        if isinstance(other, PlayerProjectile) or isinstance(other, Player):
+        if isinstance(other, Player):
+            self.hp = 0
             self.dead = True
             Enemy.shipExplode.play()
+        elif isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
 
     def update(self):
         if self.time:
@@ -388,16 +494,13 @@ def main():
     frametime = pygame.time.Clock()
   
     #music
-    pygame.mixer.music.load("assets/background.mp3")#
-    pygame.mixer.music.set_volume(0.1)#
-    pygame.mixer.music.play()# 
+    #pygame.mixer.music.load("assets/background.mp3")#
+    #pygame.mixer.music.set_volume(0.1)#
+    #pygame.mixer.music.play()# 
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
     screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
-    
-    laserSprite = pygame.image.load("assets/laser.png")
-    backgroundSprite = pygame.image.load("assets/background.jpg")
 
     stage = Stage()
      
@@ -454,7 +557,7 @@ def main():
         if keys[pygame.K_SPACE]:
             player.shoot()
         elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
-                player.laserCD = math.floor(player.laser_firerate * player.laserTime / player.laserDuration)
+                player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
                 player.laserTime = 0
                 Player.laserSound.fadeout(300)
         
@@ -492,6 +595,7 @@ def playerBulletCore():
                     x.collide(ship)
 
                     if ship.dead:
+                        player.earn(ship.bounty)
                         stage.enemies.remove(ship)
 
                     x_offset = random.randrange(-25, 25)
@@ -509,6 +613,8 @@ def playerBulletCore():
 def enemyCore(enemies):
     global spawnRate
     global spawnDelay
+    if stage.shop.active:
+        return
     numEnemies = 0
     if spawnDelay == 0:
         for x in enemies:
@@ -609,14 +715,19 @@ def renderHUD(coolDown, activeWeapon, fps):
         elif player.getWeapon() == 1:
             #CDtext = my_font.render(str(player.laserCD), False, (255, 255, 255))
             activeWeaponText = my_font.render("Laser Beam Active", False, (255, 255, 255))
+        if player.money < 10:
+            money = my_font.render("$0.0"+str(player.money), False, (255, 255, 255))
+        elif player.money < 100:
+            money = my_font.render("$0."+str(player.money), False, (255, 255, 255))
+        else:
+            money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], False, (255, 255, 255))
 
         frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
-
-
 
         #screen.blit(CDtext, (10,0))
         screen.blit(activeWeaponText, (10, 90))
         screen.blit(frameRate, (1865, 0))
+        screen.blit(money, (500,0))
 
      
 # run the main function only if this module is executed as the main script
