@@ -1,4 +1,4 @@
-import pygame, random, math
+import pygame, random, math, json
  
 pygame.init()
 pygame.font.init()
@@ -243,6 +243,11 @@ class Title():
         title = self.titleFont.render("Space Force", True, (249,4,5))
         cont = self.contFont.render("Press ENTER to Play!", True, (255, 255, 255))
         quit_text = my_font.render("Press Q to Exit", False, (255, 255, 255))
+
+        with open('hs.json', 'r') as f:
+            hs = json.loads(f.read())["highscore"]
+        highscore_text = my_font.render(f"Highscore: {hs}", False, (255, 255, 255))
+        
         tW = title.get_rect().width
         contW = cont.get_rect().width
         contH = cont.get_rect().height
@@ -252,6 +257,7 @@ class Title():
 
         screen.blit(quit_text, (960-(quit_text.get_width()//2), screen.get_height() - 50))
 
+        screen.blit(highscore_text, (screen.get_width()-highscore_text.get_width() - 30, screen.get_height() - highscore_text.get_height() - 20))
 
     def update(self):
         keys = pygame.key.get_pressed()
@@ -377,6 +383,15 @@ class Player(Entity):
                     pygame.mixer.stop()
                     pygame.mixer.music.stop()
                     Player.gameLose.play()
+                    
+                    #highscore
+                    with open('hs.json', 'r') as f:
+                        hs = json.loads(f.read())
+
+                    if hs['highscore'] < player.score:
+                        with open('hs.json', 'w') as f:
+                            f.write(json.dumps({"highscore": player.score}))
+
                 else:
                     Player.shipHit.play()
 
@@ -911,6 +926,7 @@ class MegaShip(Boss):
         self.cooldown = MegaShip.firerate
         self.suicideCooldown = MegaShip.suicide_firerate
         self.direction = random.choice([-1,1])
+        self.bossBar = Bar(self.coords[0], self.coords[1], MegaShip.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
 
     def move(self):
         if self.coords[1] <= 0:
@@ -934,9 +950,16 @@ class MegaShip(Boss):
         self.move()
         self.shoot()
         screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.update(self.hp)
+        self.bossBar.x = self.coords[0]
+        self.bossBar.y = self.coords[1]+MegaShip.sprite.get_height()+25
+        self.bossBar.display()
     
     def draw(self):
         screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.display()
 
 class Bar():
     def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
