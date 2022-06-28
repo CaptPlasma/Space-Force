@@ -1,5 +1,3 @@
-from turtle import position
-from typing import overload
 import pygame, random, math
  
 pygame.init()
