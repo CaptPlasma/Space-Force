@@ -4,7 +4,7 @@ Space Invaders and Gradius knock-off created in [Pygame](https://www.pygame.org/
 
 ![Example](./assets/example.png)
 
-# Run
+# How to Run
 
 First, make sure Python is downloaded on your computer.
 
@@ -12,4 +12,9 @@ First, make sure Python is downloaded on your computer.
 
 Then, run <code>pip install -r requirements.txt</code>
 
-Finally, run **main.py** by using the command <code>python main.py</code> in the directory of the game
+Finally, run **main.py** by using the command <code>python main.py</code> in the directory of the game files.
+
+
+--------
+
+Created as a submission to the [vsHacks](https://vshacks.tech) 2022 Contest.
