@@ -1013,6 +1013,7 @@ def main():
         health_bar.display()
         shield_bar.display()
         cooldown_bar.display()
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1094,7 +1095,6 @@ def main():
                 paused = False
                 
 
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
         pygame.display.flip()
         frametime.tick(120)
