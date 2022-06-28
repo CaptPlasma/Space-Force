@@ -43,6 +43,11 @@ class Stage():
         self.test = False
         self.shop = Shop()
         self.title = Title()
+
+        #music
+        pygame.mixer.music.load("assets/background.wav")#
+        pygame.mixer.music.set_volume(0.1)#
+        pygame.mixer.music.play(-1)# 
     
 
     def advance(self):
@@ -167,7 +172,7 @@ class Shop():
 
     def display(self):
         x_offset = 150
-        y_offset = 150
+        y_offset = 200
         button_w = 500
         button_h = 100
         spacing_w = 50
@@ -196,6 +201,9 @@ class Shop():
                 x_offset = 150
                 y_offset += button_h + spacing_h
             button += 1
+        
+        continue_text = my_font.render("Press ENTER to Continue", False, (255, 255, 255))
+        screen.blit(continue_text, (screen.get_width()/2 - continue_text.get_width()/2, 3*screen.get_height()/4))
 
     def detectClick(self):
         pos = pygame.mouse.get_pos()
@@ -223,8 +231,8 @@ class Title():
         self.contFont = pygame.font.Font("assets/fonts/IshimuraRegular.otf", 44)
 
     def display(self):
-        title = self.titleFont.render("Bootleg Space Invaders", True, (249,4,5))
-        cont = self.contFont.render("Press Enter to Continue!", True, (255, 255, 255))
+        title = self.titleFont.render("Space Force", True, (249,4,5))
+        cont = self.contFont.render("Press Enter to Play!", True, (255, 255, 255))
         tW = title.get_rect().width
         contW = cont.get_rect().width
         contH = cont.get_rect().height
@@ -268,6 +276,10 @@ class Player(Entity):
     shieldBreak.set_volume(0.5)
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
     shipExplode.set_volume(0.5)
+    regenSound = pygame.mixer.Sound("assets/shield_regen.wav")
+    regenSound.set_volume(0.3)
+    gameLose = pygame.mixer.Sound("assets/lose.wav")
+    gameLose.set_volume(0.5)
 
     def __init__(self):
         super().__init__()
@@ -279,7 +291,9 @@ class Player(Entity):
         self.shieldTimer = 0
         self.speed = 3
         self.bulletCD = 0
-        self.bullet_firerate = 200
+        #self.bullet_firerate = 200
+        #testing
+        self.bullet_firerate = 20
         self.laserCD = 0
         self.laser_firerate = 1000
         self.laserTime = 0
@@ -350,6 +364,9 @@ class Player(Entity):
                 explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
                 if self.hp == 0:
                     Player.shipExplode.play()
+                    pygame.mixer.stop()
+                    pygame.mixer.music.stop()
+                    Player.gameLose.play()
                 else:
                     Player.shipHit.play()
 
@@ -361,31 +378,36 @@ class Player(Entity):
             self.shieldTimer += 1
         if self.shieldTimer >= self.shieldRegenSpeed:
             self.shield += 1
+            Player.regenSound.play()
             self.shieldTimer = 0
 
     def earn(self, amt):
         self.money += amt*self.moneyMulti
         self.score += amt*self.moneyMulti
 
-    def update(self):
+    def update(self, shopactive):
         screen.blit(Player.playerSprite, self.coords)
-        self.regenShield()
+        
+        if not shopactive: #only regen shield and reload weapons if not in shop menu
+            self.regenShield()
+
+            if self.bulletCD > 0 :
+                self.bulletCD -= 1
+                if self.bulletCD == 0:
+                    Player.reloadSound.play()
+            if self.laserCD > 0:
+                self.laserCD -= 1
+                if self.laserCD == 0:
+                    Player.reloadSound.play()
+            if self.bombCD > 0:
+                self.bombCD -= 1
+                if self.bombCD == 0:
+                    Player.reloadSound.play()
+            if self.invTime > 0:
+                self.invTime -= 1
+
         if self.shield > 0:
             screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
-        if self.bulletCD > 0 :
-            self.bulletCD -= 1
-            if self.bulletCD == 0:
-                Player.reloadSound.play()
-        if self.laserCD > 0:
-            self.laserCD -= 1
-            if self.laserCD == 0:
-                Player.reloadSound.play()
-        if self.bombCD > 0:
-            self.bombCD -= 1
-            if self.bombCD == 0:
-                Player.reloadSound.play()
-        if self.invTime > 0:
-            self.invTime -= 1
         for bullet in self.bullets:
             bullet.update()
         for bomb in self.bombs:
@@ -467,11 +489,7 @@ class Bomb(PlayerProjectile):
     redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
     width = sprite.get_width()
     height = sprite.get_height()
-<<<<<<< HEAD
-    #bombExplosionSprites = explosionSprites.copy()
-=======
     bombExplosionSprites = rawExplosionSprites.copy()
->>>>>>> f8a1e7f86949c58cb68e24436db72096379ab309
     damage = 5
     
     def __init__(self, coords, bombDistance, radius, angle):
@@ -951,11 +969,6 @@ def main():
     running = True
     
     frametime = pygame.time.Clock()
-  
-    #music
-    #pygame.mixer.music.load("assets/background.mp3")#
-    #pygame.mixer.music.set_volume(0.1)#
-    #pygame.mixer.music.play()# 
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
@@ -967,7 +980,7 @@ def main():
 
     ##########
     health_bar = Bar(15, 10, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
-    shield_bar = Bar(15, 55, 100, 35, "Shield", maxval=player.shield, notch=True, color=(30, 50, 255))   
+    shield_bar = Bar(15, 55, 100, 35, "Shield", maxval=player.shieldMax, notch=True, color=(30, 50, 255))   
     cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
@@ -980,10 +993,8 @@ def main():
     deathVel = 1
     deathAcc = 0.1
     deathBounce = 0
-
     # main loop
     while running:
-
         if stage.test:# put code for testing here
             player.money += 100
             if stage.level < 8:
@@ -997,7 +1008,7 @@ def main():
             player.paused()
         else:
             stage.update()
-            player.update()
+            player.update(stage.shop.active)
 
         health_bar.update(player.hp)
         shield_bar.update(player.shield)
@@ -1027,6 +1038,8 @@ def main():
 
         keys = pygame.key.get_pressed()
 
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+
         if player.hp <= 0:
             paused = True
             backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
@@ -1040,7 +1053,17 @@ def main():
                 screen.blit(score_text, (screen.get_width()/2 - score_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2))
                 score_text.set_alpha(min(254,score_text.get_alpha()+1))
 
+                exit_text = my_font.render("Press E to Return to Main Menu", False, (255, 255, 255))
+                screen.blit(exit_text, (screen.get_width()/2 - exit_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2 + score_text.get_height() + 30))
+
+                if keys[pygame.K_e]:
+                    stage = Stage()
+                    player = Player()
+                    paused = False
+
             else:
+                score_text = my_font.render("Score: "+str(player.score), False, (255, 255, 255))
+                score_text.set_alpha(0)
                 deathLoc += deathVel
                 if deathLoc < screen.get_height()/2 - death_text.get_height()*3/5:
                     deathVel += deathAcc
@@ -1076,10 +1099,6 @@ def main():
             if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a] and not stage.test:
                 stage.test = True
                 print("=========TESTING=========")
-            if keys[pygame.K_h]:
-                #stage.title.active = True
-                stage = Stage()
-                player = Player()
 
 
             enemyCore(stage.enemies)
@@ -1093,13 +1112,18 @@ def main():
             screen.blit(backdrop, (0,0))
 
             text = my_font.render('Press ENTER to Resume', False, (255, 255, 255))
+            subtext = my_font.render('Press E to Exit to Main Menu', False, (255, 255, 255))
             screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
+            screen.blit(subtext, (screen.get_width()/2 - subtext.get_width()/2, screen.get_height()/2 + text.get_height() + 15))
 
             if keys[pygame.K_RETURN]:
                 paused = False
-                
-
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+            
+            if keys[pygame.K_e]:
+                stage = Stage()
+                player = Player()
+                paused = False
+            
         
         pygame.display.flip()
         frametime.tick(120)
@@ -1286,7 +1310,7 @@ def renderHUD(coolDown, activeWeapon, fps):
 
     frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
     #screen.blit(CDtext, (10,0))
-    screen.blit(activeWeaponText, (15, 90))
+    screen.blit(activeWeaponText, (15, 100))
     screen.blit(frameRate, (1865, 0))
     screen.blit(money, (600,0))
 
