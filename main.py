@@ -90,7 +90,6 @@ class Stage():
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0 and self.spawned >= self.toSpawn:
-            print(self.level)
             if self.level%5 == 0:
                 if self.bossDead:
                     self.advance()
@@ -1105,7 +1104,6 @@ def explosionCore(explosions):
     
 
     if len(explosions) != 0:
-        print(explosions, explosions[0][1])
         for y in explosions:
             explosionSprites = []
             for sprite in rawExplosionSprites:
