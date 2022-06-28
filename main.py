@@ -118,6 +118,8 @@ class Shop():
             "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
             "Buy Bomb": [0, 1, 30000, [], []],
+            "Upgrade Bomb Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
+            "Upgrade Bomb Cooldown": [0, 11, 50000, [0, 1.5, 1.1], [0, 0, 5]],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
         self.itemKeys = [
@@ -128,6 +130,8 @@ class Shop():
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration",
             "Buy Bomb",
+            "Upgrade Bomb Damage",
+            "Upgrade Bomb Cooldown",
             "Upgrade Shield Regen Speed"
         ]
         self.clickToggle = False
@@ -165,7 +169,13 @@ class Shop():
                 elif item == "Upgrade Laser Beam Duration":
                     player.laserDuration += 50
                 elif item == "Buy Bomb":
+                    self.items["Upgrade Bomb Damage"][0] = 1
+                    self.items["Upgrade Bomb Cooldown"][0] = 1
                     player.unlockedWeapons.append("Bomb")
+                elif item == "Upgrade Bomb Damage":
+                    Bomb.damage += 0.5
+                elif item == "Upgrade Bomb Cooldown":
+                    player.bomb_firerate -= 100
                 elif item == "Upgrade Shield Regen Speed":
                     player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
@@ -290,9 +300,7 @@ class Player(Entity):
         self.shieldTimer = 0
         self.speed = 3
         self.bulletCD = 0
-        #self.bullet_firerate = 200
-        #testing
-        self.bullet_firerate = 20
+        self.bullet_firerate = 200
         self.laserCD = 0
         self.laser_firerate = 1000
         self.laserTime = 0
