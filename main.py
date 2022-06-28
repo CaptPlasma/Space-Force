@@ -241,13 +241,16 @@ class Title():
 
     def display(self):
         title = self.titleFont.render("Space Force", True, (249,4,5))
-        cont = self.contFont.render("Press Enter to Play!", True, (255, 255, 255))
+        cont = self.contFont.render("Press ENTER to Play!", True, (255, 255, 255))
+        quit_text = my_font.render("Press Q to Exit", False, (255, 255, 255))
         tW = title.get_rect().width
         contW = cont.get_rect().width
         contH = cont.get_rect().height
         screen.blit(title, (960-(tW//2),25))
 
         screen.blit(cont, (960-(contW//2), 540 - (contH//2)))
+
+        screen.blit(quit_text, (960-(quit_text.get_width()//2), screen.get_height() - 50))
 
 
     def update(self):
@@ -1107,7 +1110,9 @@ def main():
             if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a] and not stage.test:
                 stage.test = True
                 print("=========TESTING=========")
-
+            
+            if keys[pygame.K_q] and stage.title.active:
+                running = False
 
             enemyCore(stage.enemies)
             playerBulletCore()
