@@ -290,9 +290,7 @@ class Player(Entity):
         self.shieldTimer = 0
         self.speed = 3
         self.bulletCD = 0
-        #self.bullet_firerate = 200
-        #testing
-        self.bullet_firerate = 20
+        self.bullet_firerate = 200
         self.laserCD = 0
         self.laser_firerate = 1000
         self.laserTime = 0
