@@ -467,7 +467,7 @@ class Bomb(PlayerProjectile):
     redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
     width = sprite.get_width()
     height = sprite.get_height()
-    bombExplosionSprites = explosionSprites.copy()
+    #bombExplosionSprites = explosionSprites.copy()
     damage = 5
     
     def __init__(self, coords, bombDistance, radius, angle):
@@ -939,7 +939,7 @@ def main():
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
-    screen = pygame.display.set_mode((1920,1080))#, pygame.FULLSCREEN|pygame.SCALED)
+    screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
 
     stage = Stage()
      
@@ -966,6 +966,8 @@ def main():
 
         if stage.test:# put code for testing here
             player.money += 100
+            if stage.level < 8:
+                stage.level = 8
             pass
 
         screen.fill((0,0,0)) #Clears the screen
