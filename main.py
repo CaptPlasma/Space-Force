@@ -682,6 +682,7 @@ class Fleet(Enemy):
         for member in self.fleetMembers:
             member.speed = self.speed
         self.memberCount = len(self.fleetMembers)
+        self.bountyMsg = my_font.render("Wipe out the remnants of the insurgent fleet to claim a large bounty", True, (255, 255, 255))
     
     def move(self):
         self.coords[0] -= self.speed
@@ -696,6 +697,7 @@ class Fleet(Enemy):
             if self.memberCount <= 0:
                 player.earn(Fleet.bounty)
             return
+        screen.blit(self.bountyMsg, (screen.get_rect().centerx - self.bountyMsg.get_width()/2, self.bountyMsg.get_height()*2))
         self.move()
         for member in self.fleetMembers:
             if member.dead:
@@ -864,7 +866,8 @@ def main():
     while running:
 
         if stage.test:# put code for testing here
-            player.money += 100
+            if stage.level < 7:
+                stage.level = 7
             pass
 
         screen.fill((0,0,0)) #Clears the screen
