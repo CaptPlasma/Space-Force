@@ -13,7 +13,7 @@ spawnRate = 60     #interval before enemies spawn
 spawnDelay = 0    #Initial delay before spawning
 
 explosions = []
-explosionSprites = []
+rawExplosionSprites = []
 
 enemiesR0 = []
 enemiesR1 = []
@@ -26,7 +26,7 @@ dirR2 = random.choice([1, -1])
 dirR3 = random.choice([1, -1])
 
 for x in range(12):
-    explosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
+    rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
 
 class Stage():
     def __init__(self):
@@ -320,7 +320,7 @@ class Player(Entity):
                 self.shield -= 1
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
-                explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
                 if self.shield == 0:
                     Player.shieldBreak.play()
                 else:
@@ -330,7 +330,7 @@ class Player(Entity):
                 self.hp -= 1
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
-                explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
                 if self.hp == 0:
                     Player.shipExplode.play()
                 else:
@@ -850,7 +850,7 @@ def main():
 
     #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
     pygame.display.set_caption("Space Invaders")
-    screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
+    screen = pygame.display.set_mode((1920,1080))#, pygame.FULLSCREEN|pygame.SCALED)
 
     stage = Stage()
      
@@ -986,12 +986,22 @@ def main():
         frametime.tick(120)
 
 def explosionCore(explosions):
-    for x in explosions:
-        if x[0] % 2 == 0:
-            screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2]))
-        x[0] += 1
-        if x[0] > 22:
-            explosions.remove(x)
+    
+    
+
+    if len(explosions) != 0:
+        print(explosions, explosions[0][1])
+        for y in explosions:
+            explosionSprites = []
+            for sprite in rawExplosionSprites:
+                explosionSprites.append(pygame.transform.scale(sprite, (y[0]*1.5, y[0]*1.5)))
+            x = y[1]
+            if x[0] % 2 == 0:
+                h = explosionSprites[x[0]//2].get_height()
+                screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2] - h/2))
+            x[0] += 1
+            if x[0] > 22:
+                explosions.remove(y)
 
 def playerBulletCore():
     for x in player.bullets:
@@ -1007,15 +1017,25 @@ def playerBulletCore():
                     ship.collide(x)
                     x.collide(ship)
 
+                    x_offset = random.randrange(-25, 25)
+                    y_offset = 0
                     if ship.dead:
                         player.earn(ship.bounty)
                         stage.enemies.remove(ship)
+                        try:
+                            if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        except:
+                            explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                    else:
+                        explosions.append([50, [0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
 
-                    x_offset = random.randrange(-25, 25)
-                    y_offset = 0
+                    
 
 
-                    explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                    
                     
                     if x.dead:
                         try:
@@ -1028,15 +1048,27 @@ def playerBulletCore():
                         member.collide(x)
                         x.collide(member)
 
-                        if member.dead:
-                            player.earn(member.bounty)
-                            ship.memberCount -= 1
 
                         x_offset = random.randrange(-25, 25)
                         y_offset = 0
 
+                        if member.dead:
+                            player.earn(member.bounty)
+                            ship.memberCount -= 1
+                            try:
+                                if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                                else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            except:
+                                explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        else:
+                            explosions.append([50,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
 
-                        explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                        
+
+
+                        
                         
                         if x.dead:
                             try:
