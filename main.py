@@ -112,8 +112,8 @@ class Shop():
         self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
             "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3]],
-            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
-            "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
+            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5, 1.03], [0, 0, 3]],
+            "Upgrade Laser Cannon Speed": [1, 11, 500, [100, 1.1], [0, 0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
             "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
