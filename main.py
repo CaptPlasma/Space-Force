@@ -271,10 +271,12 @@ class Player(Entity):
         self.bomb_firerate = 1500
         self.bullets = []
         self.bombs = []
+        self.bulletSpeed = 20
         self.bulletDistance = scrn_w*3/4
-        self.bombRow = 4
+        self.bombDistance = 1450
+        self.bombRadius = 200
         self.weapon = 0
-        self.unlockedWeapons = ["Laser Cannon"]
+        self.unlockedWeapons = ["Laser Cannon", "Bomb"]
         self.invTime = 0
         self.money=0
         self.moneyMulti = 1
@@ -307,7 +309,7 @@ class Player(Entity):
                 Player.laserSound.fadeout(300)
         elif self.unlockedWeapons[self.weapon] == "Bomb":
             if self.bombCD <= 0:
-                self.bombs.append(Bomb(self.coords.copy(), self.bombSpeed, 0))
+                self.bombs.append(Bomb(self.coords.copy(), self.bombDistance, self.bombRadius, 0))
                 self.bombCD = self.bomb_firerate
                 Player.bulletSound.play()
 
@@ -365,6 +367,10 @@ class Player(Entity):
             self.invTime -= 1
         for bullet in self.bullets:
             bullet.update()
+        for bomb in self.bombs:
+            bomb.update()
+            if bomb.dead:
+                self.bombs.remove(bomb)
 
     def paused(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -440,26 +446,42 @@ class Bomb(PlayerProjectile):
     redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
     width = sprite.get_width()
     height = sprite.get_height()
+    bombExplosionSprites = explosionSprites.copy()
     
-    def __init__(self, coords, bombDistance, angle):
+    def __init__(self, coords, bombDistance, radius, angle):
         super().__init__(coords, None, angle)
-        self.fuse = 300
+        self.fuse = 400
         self.timer = 0
-        self.speed = bombDistance/100
+        self.speed = bombDistance/200
+        self.radius = radius
+        self.explosionSprites = []
+        for e in range(12):
+            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/explosion/"+str(e)+".png"), (radius*2, radius*2)))
 
     def move(self):
         self.coords[0] += self.speed
         if self.speed > 0:
             self.coords[0] += math.cos(self.angle)*self.speed
             self.coords[1] += math.sin(self.angle)*self.speed
-            self.speed -= 0.1
+            self.speed -= 0.04
         elif self.speed != 0:
             self.speed = 0
 
+    def explode(self):
+        screen.blit(self.explosionSprites[int(self.explosions[0])], (self.explosions[1], self.explosions[2]))
+        self.explosions[0] += 0.25
+
     def update(self):
         self.timer += 1
-        self.move()
-        screen.blit(self.sprite, self.coords)
+        if self.timer <= self.fuse:
+            self.move()
+            screen.blit(self.sprite, self.coords)
+            if self.timer == self.fuse:
+                self.explosions = [0, self.coords[0]+self.width/2-self.radius, self.coords[1]+self.height/2-self.radius]
+        elif self.timer > self.fuse+36:# add 12 / what is added to self.explosions[0] in self.explode()
+            self.dead = True
+        else:
+            self.explode()
 
 class Enemy(Entity):
     hpMulti = 1
