@@ -814,7 +814,7 @@ class Fleet(Enemy):
             if member.dead:
                 self.fleetMembers.remove(member)
                 continue
-            member.update()
+            member.draw()
 
 class Fighter(Enemy):
     sprite = pygame.image.load("assets/convoyShip.png")
