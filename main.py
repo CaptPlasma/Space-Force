@@ -1272,11 +1272,11 @@ def renderHUD(coolDown, activeWeapon, fps):
         return
     activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
     if player.money < 10:
-        money = my_font.render("$0.0"+str(player.money), True, (255, 255, 255))
+        money = my_font.render("$0.0"+str(int(player.money)), True, (255, 255, 255))
     elif player.money < 100:
-        money = my_font.render("$0."+str(player.money), True, (255, 255, 255))
+        money = my_font.render("$0."+str(int(player.money)), True, (255, 255, 255))
     else:
-        money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], True, (255, 255, 255))
+        money = my_font.render('$'+str(int(player.money))[:-2]+'.'+str(int(player.money))[-2:], True, (255, 255, 255))
 
     frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
     #screen.blit(CDtext, (10,0))
