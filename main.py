@@ -283,7 +283,7 @@ class Player(Entity):
         self.weapon = 0
         self.unlockedWeapons = ["Laser Cannon"]
         self.invTime = 0
-        self.money=0
+        self.money=9999999
         self.moneyMulti = 1
         self.score = 0
 
@@ -716,7 +716,7 @@ class Fleet(Enemy):
             member.update()
 
 class Fighter(Enemy):
-    sprite = pygame.image.load("assets/Ship.png")
+    sprite = pygame.image.load("assets/convoyShip.png")
     bounty = 20
     speed = 1
     width = sprite.get_width()
