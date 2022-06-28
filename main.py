@@ -1002,7 +1002,7 @@ def main():
     
     frametime = pygame.time.Clock()
 
-    #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
+    pygame.display.set_icon(pygame.image.load("assets/icon.png"))
     pygame.display.set_caption("Space Invaders")
     screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
 
