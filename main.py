@@ -467,11 +467,7 @@ class Bomb(PlayerProjectile):
     redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
     width = sprite.get_width()
     height = sprite.get_height()
-<<<<<<< HEAD
-    #bombExplosionSprites = explosionSprites.copy()
-=======
     bombExplosionSprites = rawExplosionSprites.copy()
->>>>>>> f8a1e7f86949c58cb68e24436db72096379ab309
     damage = 5
     
     def __init__(self, coords, bombDistance, radius, angle):
