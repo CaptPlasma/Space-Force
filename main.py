@@ -13,9 +13,20 @@ spawnRate = 60     #interval before enemies spawn
 spawnDelay = 0    #Initial delay before spawning
 
 explosions = []
-explosionSprites = []
+rawExplosionSprites = []
+
+enemiesR0 = []
+enemiesR1 = []
+enemiesR2 = []
+enemiesR3 = []
+
+dirR0 = random.choice([1, -1])
+dirR1 = random.choice([1, -1])
+dirR2 = random.choice([1, -1])
+dirR3 = random.choice([1, -1])
+
 for x in range(12):
-    explosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
+    rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
 
 class Stage():
     def __init__(self):
@@ -45,7 +56,7 @@ class Stage():
 
         # boss rewards
         if self.level%5 == 0:
-            Enemy.hpMulti += 0.2
+            Enemy.hpMulti += 0.5
             player.moneyMulti += 0.1
 
         # unlock enemies
@@ -69,7 +80,7 @@ class Stage():
     def update(self):
         global titleActive
         screen.blit(self.background, (0,0))
-
+        
 
         if self.title.active:
             self.title.update()
@@ -89,19 +100,20 @@ class Stage():
                 self.bossDead = False
                 self.advance()
         else:
-            for enemy in range(len(self.enemies)):
-                self.enemies[enemy].update()
+            for enemy in self.enemies:
+                enemy.update()
 
 class Shop():
     def __init__(self):
         self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Upgrade Laser Cannon Damage": [1, -1, 1000, [100, 1.1], [0, 10]],
+            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3]],
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
             "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
-            "Upgrade Laser Beam Damage": [0, -1, 10000, [1000, 1.2], [0, 10]],
+            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
+            "Buy Bomb": [0, 1, 30000, [], []],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
         self.itemKeys = [
@@ -111,6 +123,7 @@ class Shop():
             "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration",
+            "Buy Bomb",
             "Upgrade Shield Regen Speed"
         ]
         self.clickToggle = False
@@ -118,19 +131,23 @@ class Shop():
     def buy(self, item):
         if item in self.items:
             upgrade = self.items[item]
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2]:
+            if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
+                return
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
                 upgrade[0] += 1
-                player.money -= upgrade[2]
+                player.money -= int(upgrade[2])
                 for scale in range(len(upgrade[4])):
                     if upgrade[0] > upgrade[4][scale]:
                         if scale == 0:
                             upgrade[2] += upgrade[3][0]
                         elif scale == 1:
-                            upgrade[2] *= upgrade[3][1]
+                            upgrade[2] = upgrade[2] * upgrade[3][1]
                         elif scale == 2:
-                            upgrade[2] **= upgrade[3][2]
+                            upgrade[2] = upgrade[2] ** upgrade[3][2]
+                    else:
+                        break
                 if item == "Upgrade Laser Cannon Damage":
-                    Bullet.damage += 0.5
+                    Bullet.damage += 0.25
                 elif item == "Upgrade Laser Cannon Cooldown":
                     player.bullet_firerate -= 10
                 elif item == "Upgrade Laser Cannon Speed":
@@ -140,17 +157,11 @@ class Shop():
                     self.items["Upgrade Laser Beam Damage"][0] = 1
                     self.items["Upgrade Laser Beam Duration"][0] = 1
                 elif item == "Upgrade Laser Beam Damage":
-                    if upgrade[0] == 1:
-                        upgrade[0] = 0
-                        player.money += upgrade[2]
-                        return
-                    Laser.damage += 0.25
+                    Laser.damage += 0.01
                 elif item == "Upgrade Laser Beam Duration":
-                    if upgrade[0] == 1:
-                        upgrade[0] = 0
-                        player.money += upgrade[2]
-                        return
                     player.laserDuration += 50
+                elif item == "Buy Bomb":
+                    player.unlockedWeapons.append("Bomb")
                 elif item == "Upgrade Shield Regen Speed":
                     player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
@@ -164,15 +175,17 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and self.items[key][0] < self.items[key][1]:
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
             self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render('$'+str(self.items[key][2])[:-2]+'.'+str(self.items[key][2])[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
-            if self.items[key][1] == -1:
+            screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            if (self.items[key][0] == 0 and key not in ["Buy Laser Beam", "Buy Bomb"]) or (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
+                screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+            elif self.items[key][1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][0] < self.items[key][1]:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
@@ -271,8 +284,14 @@ class Player(Entity):
         self.laser_firerate = 1000
         self.laserTime = 0
         self.laserDuration = 300
+        self.bombCD = 0
+        self.bomb_firerate = 1500
         self.bullets = []
+        self.bombs = []
         self.bulletSpeed = 20
+        self.bulletDistance = scrn_w*3/4
+        self.bombDistance = 1450
+        self.bombRadius = 200
         self.weapon = 0
         self.unlockedWeapons = ["Laser Cannon"]
         self.invTime = 0
@@ -305,6 +324,11 @@ class Player(Entity):
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
                 Player.laserSound.fadeout(300)
+        elif self.unlockedWeapons[self.weapon] == "Bomb":
+            if self.bombCD <= 0:
+                self.bombs.append(Bomb(self.coords.copy(), self.bombDistance, self.bombRadius, 0))
+                self.bombCD = self.bomb_firerate
+                Player.bulletSound.play()
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -313,7 +337,7 @@ class Player(Entity):
                 self.shield -= 1
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
-                explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
                 if self.shield == 0:
                     Player.shieldBreak.play()
                 else:
@@ -323,7 +347,7 @@ class Player(Entity):
                 self.hp -= 1
                 x_offset = random.randrange(-25, 25)
                 y_offset = 0
-                explosions.append([0, other.coords[0] + x_offset, other.coords[1] + y_offset])
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
                 if self.hp == 0:
                     Player.shipExplode.play()
                 else:
@@ -341,7 +365,7 @@ class Player(Entity):
 
     def earn(self, amt):
         self.money += amt*self.moneyMulti
-        self.score += amt
+        self.score += amt*self.moneyMulti
 
     def update(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -350,16 +374,24 @@ class Player(Entity):
             screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
         if self.bulletCD > 0 :
             self.bulletCD -= 1
-            if (self.bulletCD == 0):
+            if self.bulletCD == 0:
                 Player.reloadSound.play()
         if self.laserCD > 0:
             self.laserCD -= 1
-            if (self.laserCD == 0):
+            if self.laserCD == 0:
+                Player.reloadSound.play()
+        if self.bombCD > 0:
+            self.bombCD -= 1
+            if self.bombCD == 0:
                 Player.reloadSound.play()
         if self.invTime > 0:
             self.invTime -= 1
         for bullet in self.bullets:
             bullet.update()
+        for bomb in self.bombs:
+            bomb.update()
+            if bomb.dead:
+                self.bombs.remove(bomb)
 
     def paused(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -408,7 +440,7 @@ class Laser(PlayerProjectile):
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
-    damage = 0.5
+    damage = 0.05
 
     def __init__(self, coords, angle, speed=sprite.get_width()):
         super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
@@ -430,16 +462,176 @@ class Laser(PlayerProjectile):
         else:
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
+class Bomb(PlayerProjectile):
+    sprite = pygame.image.load("assets/cargoShip.png")                                                      #change this
+    redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
+    width = sprite.get_width()
+    height = sprite.get_height()
+<<<<<<< HEAD
+    #bombExplosionSprites = explosionSprites.copy()
+=======
+    bombExplosionSprites = rawExplosionSprites.copy()
+>>>>>>> f8a1e7f86949c58cb68e24436db72096379ab309
+    damage = 5
+    
+    def __init__(self, coords, bombDistance, radius, angle):
+        super().__init__(coords, None, angle)
+        self.fuse = 400
+        self.timer = 0
+        self.speed = bombDistance/200
+        self.radius = radius
+        self.explosionSprites = []
+        for e in range(12):
+            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/explosion/"+str(e)+".png"), (radius*2, radius*2)))
+
+    def move(self):
+        self.coords[0] += self.speed
+        if self.speed > 0:
+            self.coords[0] += math.cos(self.angle)*self.speed
+            self.coords[1] += math.sin(self.angle)*self.speed
+            self.speed -= 0.04
+        elif self.speed != 0:
+            self.speed = 0
+
+    def explode(self):
+        screen.blit(self.explosionSprites[int(self.explosions[0])], (self.explosions[1], self.explosions[2]))
+        self.explosions[0] += 0.25
+
+    def update(self):
+        self.timer += 1
+        if self.timer <= self.fuse:
+            self.move()
+            screen.blit(self.sprite, self.coords)
+            if self.timer == self.fuse:
+                self.explosions = [0, self.coords[0]+self.width/2-self.radius, self.coords[1]+self.height/2-self.radius]
+                for enemy in stage.enemies:
+                    if isinstance(enemy, Fleet):
+                        for member in enemy.fleetMembers:
+                            if circ_rect_collide(self.coords, self.radius, member.sprite.get_rect()):
+                                member.hp -= self.damage
+                                if member.hp <= 0:
+                                    member.dead = True
+                                    enemy.memberCount -= 1
+                                    player.earn(member.bounty)
+                                    enemy.fleetMembers.remove(member)
+                        if enemy.memberCount == 0:
+                            enemy.dead = True
+                            player.earn(enemy.bounty)
+                            stage.enemies.remove(enemy)
+                    elif not isinstance(enemy, EnemyProjectile):
+                        if circ_rect_collide(self.coords, self.radius, enemy.sprite.get_rect()):
+                            enemy.hp -= self.damage
+                            if enemy.hp <= 0:
+                                enemy.dead = True
+                                player.earn(enemy.bounty)
+                                stage.enemies.remove(enemy)
+        elif self.timer > self.fuse+36:# add 12 / what is added to self.explosions[0] in self.explode()
+            self.dead = True
+        else:
+            self.explode()
+
 class Enemy(Entity):
     hpMulti = 1
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
     shipExplode.set_volume(0.5)
-
+    spawnMargin = 25 #Closest 2 ships can spawn (Only affects Strafers and Blue turrets)
     def __init__(self):
         super().__init__()
 
+    def positionChooser(self, type):
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
+
+        if type == "Strafer":
+            self.w = Strafer.width
+            self.h = Strafer.height
+        elif type == "BlueTurret":
+            self.w = BlueTurret.width
+            self.h = BlueTurret.height
+
+        #print(type)
+
+        iteration = 0
+        while True:
+            overlap = False
+            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            if iteration > 100: #If overcrowded ignore overlaping
+                print("ERROR: Overcrowding")
+                break
+            if POS[0] == 950 and len(enemiesR0) > 0:
+                for x in enemiesR0:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1200 and len(enemiesR1) > 0:
+                for x in enemiesR1:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1450:
+                for x in enemiesR2:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1700:
+                for x in enemiesR3:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            if overlap == False:
+                break
+                
+            iteration += 1
+
+        if POS[0] == 950:
+            enemiesR0.append(self)
+        elif POS[0] == 1200:
+            enemiesR1.append(self)
+        elif POS[0] == 1450:
+            enemiesR2.append(self)
+        else:
+            enemiesR3.append(self)
+        
+        
+        
+
+        direction = random.choice([-1,1])
+
+        return POS, direction
+
+    def move(self):
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
+
+
+        if self in enemiesR0:
+            if self.coords[1] <= 0:
+                dirR0 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR0 = -1
+            self.coords[1] += dirR0*Strafer.speed
+        elif self in enemiesR1:
+            if self.coords[1] <= 0:
+                dirR1 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR1 = -1
+            self.coords[1] += dirR1*Strafer.speed
+        elif self in enemiesR2:
+            if self.coords[1] <= 0:
+                dirR2 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR2 = -1
+            self.coords[1] += dirR2*Strafer.speed
+        else:
+            if self.coords[1] <= 0:
+                dirR3 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR3 = -1
+            self.coords[1] += dirR3*Strafer.speed
+
+
+        '''if self.coords[1] <= 0:
+            self.direction = 1
+        elif self.coords[1] >= scrn_h-Strafer.height:
+            self.direction = -1
+        self.coords[1] += self.direction*Strafer.speed'''
+
 class Strafer(Enemy):
-    sprite = pygame.image.load("assets/cargoShip.png")                                                   #change this
+    sprite = pygame.image.load("assets/cargoShip.png")
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -447,17 +639,10 @@ class Strafer(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords = [random.randint(scrn_w/2, scrn_w-Strafer.width-100), random.randint(100, scrn_h-Strafer.height-100)]
-        self.direction = random.choice([-1,1])
+        self.coords, self.direction = self.positionChooser("Strafer")
         self.hp = 1*Enemy.hpMulti
 
-    def move(self):
-        if self.coords[1] <= 0:
-            self.direction = 1
-        elif self.coords[1] >= scrn_h-Strafer.height:
-            self.direction = -1
-        self.coords[1] += self.direction*Strafer.speed
-    
+
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
             self.hp -= other.damage
@@ -484,17 +669,9 @@ class BlueTurret(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords = [random.choice([scrn_w/2, scrn_w*2/3, scrn_w*5/6]), random.randint(100, scrn_h-100)]
-        self.direction = random.choice([-1,1])
+        self.coords, self.direction = self.positionChooser("BlueTurret")
         self.cooldown = BlueTurret.firerate
         self.hp = 3*Enemy.hpMulti
-
-    def move(self):
-        if self.coords[1] <= 0:
-            self.direction = 1
-        elif self.coords[1] >= scrn_h-BlueTurret.height:
-            self.direction = -1
-        self.coords[1] += self.direction*BlueTurret.speed
 
     def shoot(self):
         if self.cooldown <= 0:
@@ -592,7 +769,7 @@ class SuicideEnemy(Enemy):
         screen.blit(SuicideEnemy.sprite, self.coords)
 
 class Fleet(Enemy):
-    bounty = 500
+    bounty = 250
     speed = 1
 
     def __init__(self):
@@ -608,6 +785,7 @@ class Fleet(Enemy):
         for member in self.fleetMembers:
             member.speed = self.speed
         self.memberCount = len(self.fleetMembers)
+        self.bountyMsg = my_font.render("Wipe out the remnants of the insurgent fleet to claim a large bounty", True, (255, 255, 255))
     
     def move(self):
         self.coords[0] -= self.speed
@@ -622,6 +800,7 @@ class Fleet(Enemy):
             if self.memberCount <= 0:
                 player.earn(Fleet.bounty)
             return
+        screen.blit(self.bountyMsg, (screen.get_rect().centerx - self.bountyMsg.get_width()/2, self.bountyMsg.get_height()*2))
         self.move()
         for member in self.fleetMembers:
             if member.dead:
@@ -643,8 +822,8 @@ class Fleet(Enemy):
             member.update()
 
 class Fighter(Enemy):
-    sprite = pygame.image.load("assets/Ship.png")
-    bounty = 100
+    sprite = pygame.image.load("assets/convoyShip.png")
+    bounty = 20
     speed = 1
     width = sprite.get_width()
     height = sprite.get_height()
@@ -792,10 +971,23 @@ def main():
     cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
     ##########
 
+    # death screen vars
+    death_font = pygame.font.SysFont('Comic Sans MS', 300)
+    death_text = death_font.render("Game Over!", False, (200, 0, 0))
+    score_text = my_font.render("Score: "+str(player.score), False, (255, 255, 255))
+    score_text.set_alpha(0)
+    deathLoc = -death_font.get_height()
+    deathVel = 1
+    deathAcc = 0.1
+    deathBounce = 0
+
     # main loop
     while running:
 
         if stage.test:# put code for testing here
+            player.money += 100
+            if stage.level < 8:
+                stage.level = 8
             pass
 
         screen.fill((0,0,0)) #Clears the screen
@@ -819,6 +1011,9 @@ def main():
             else:
                 cooldown_bar.update(cooldown_bar.maxvalue-(player.laserCD/player.laser_firerate)*cooldown_bar.maxvalue)
 
+        elif player.getWeapon() == 2:
+            cooldown_bar.update(cooldown_bar.maxvalue-(player.bombCD/player.bomb_firerate)*cooldown_bar.maxvalue)
+
 
         health_bar.display()
         shield_bar.display()
@@ -832,7 +1027,31 @@ def main():
 
         keys = pygame.key.get_pressed()
 
-        if not paused:
+        if player.hp <= 0:
+            paused = True
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            screen.blit(death_text, (screen.get_width()/2 - death_text.get_width()/2, deathLoc))
+
+            if deathBounce > 5:
+                screen.blit(score_text, (screen.get_width()/2 - score_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2))
+                score_text.set_alpha(min(254,score_text.get_alpha()+1))
+
+            else:
+                deathLoc += deathVel
+                if deathLoc < screen.get_height()/2 - death_text.get_height()*3/5:
+                    deathVel += deathAcc
+                else:
+                    deathVel *= -0.5
+                    deathBounce += 1
+
+                if keys[pygame.K_RETURN]:
+                    return
+
+        elif not paused:
             
             if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
                 player.coords[1] -= player.speed
@@ -866,15 +1085,6 @@ def main():
             enemyCore(stage.enemies)
             playerBulletCore()
             explosionCore(explosions)
-            if player.hp <= 0:
-                backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
-                backdrop.set_alpha(120)
-                backdrop.fill((0, 0, 0))
-                screen.blit(backdrop, (0,0))
-
-                text = my_font.render("Game Over!\nScore: "+str(player.score), False, (255, 255, 255))
-                screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
-                break
 
         else:
             backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
@@ -895,12 +1105,22 @@ def main():
         frametime.tick(120)
 
 def explosionCore(explosions):
-    for x in explosions:
-        if x[0] % 2 == 0:
-            screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2]))
-        x[0] += 1
-        if x[0] > 22:
-            explosions.remove(x)
+    
+    
+
+    if len(explosions) != 0:
+        print(explosions, explosions[0][1])
+        for y in explosions:
+            explosionSprites = []
+            for sprite in rawExplosionSprites:
+                explosionSprites.append(pygame.transform.scale(sprite, (y[0]*1.5, y[0]*1.5)))
+            x = y[1]
+            if x[0] % 2 == 0:
+                h = explosionSprites[x[0]//2].get_height()
+                screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2] - h/2))
+            x[0] += 1
+            if x[0] > 22:
+                explosions.remove(y)
 
 def playerBulletCore():
     for x in player.bullets:
@@ -916,36 +1136,60 @@ def playerBulletCore():
                     ship.collide(x)
                     x.collide(ship)
 
+                    x_offset = random.randrange(-25, 25)
+                    y_offset = 0
                     if ship.dead:
                         player.earn(ship.bounty)
                         stage.enemies.remove(ship)
+                        try:
+                            if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        except:
+                            explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                    else:
+                        explosions.append([50, [0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
 
-                    x_offset = random.randrange(-25, 25)
-                    y_offset = 0
+                    
 
 
-                    explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                    
                     
                     if x.dead:
                         try:
                             player.bullets.remove(x)
                         except ValueError:
                             pass
+                    break
+            
             elif isinstance(ship, Fleet):
                 for member in ship.fleetMembers:
                     if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
                         member.collide(x)
                         x.collide(member)
 
-                        if member.dead:
-                            player.earn(member.bounty)
-                            ship.memberCount -= 1
 
                         x_offset = random.randrange(-25, 25)
                         y_offset = 0
 
+                        if member.dead:
+                            player.earn(member.bounty)
+                            ship.memberCount -= 1
+                            try:
+                                if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                                else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            except:
+                                explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        else:
+                            explosions.append([50,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
 
-                        explosions.append([0, x.coords[0] + x_offset, x.coords[1] + y_offset])
+                        
+
+
+                        
                         
                         if x.dead:
                             try:
@@ -965,8 +1209,11 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
-            enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
-            enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
+            #enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
+            #enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
+
+            enemySpawner(enemies)
+
             stage.spawned += 1
             spawnDelay = spawnRate
 
@@ -995,73 +1242,36 @@ def enemyCore(enemies):
 
     #enemyMove(enemies)                                                                                     needs fixing
 
-def enemyMove(enemies):
-        g1 = []
-        g2 = []
-        g3 = []
+def enemySpawner(enemies):
+    if stage.enemyProgression == 1:
+        enemies.append(Strafer())
+    elif stage.enemyProgression == 2:
+        rng = random.randint(0, 1)
+        if rng == 0:
+            enemies.append(Strafer())
+        else:
+            enemies.append(BlueTurret())
+    elif stage.enemyProgression == 3:
+        rng = random.randint(0,2)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        else:
+            enemies.append(Fleet())
+    elif stage.enemyProgression == 4:
+        rng = random.randint(0,3)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        elif rng == 2:
+            enemies.append(Fleet())
+        else:
+            enemies.append(SuicideEnemy())
+    else:
+        print("ERROR: Stage above 4")
 
-        for index in range(len(enemies)):
-            if enemies[index].coords[0] == 1250:
-                g1.append(index)
-            elif enemies[index].coords[0] == 1450:
-                g2.append(index)
-            else:
-                g3.append(index)
-        
-        if len(g1) > 0:                 #makes newly spawned enemies move in the same direction as others
-            for x in g1:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    if enemies[x].direction != enemies[g1[0]].direction:
-                        enemies[x].direction = enemies[g1[0]].direction
-        if len(g2) > 0:
-            for x in g2:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    if enemies[x].direction != enemies[g2[0]].direction:
-                        enemies[x].direction = enemies[g2[0]].direction
-        if len(g3) > 0:
-            for x in g3:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    if enemies[x].direction != enemies[g3[0]].direction:
-                        enemies[x].direction = enemies[g3[0]].direction
-
-        large_g1 = 0                                        #inverts direction of column if out of bounds
-        small_g1 = 1080
-        for index in g1:
-            if enemies[index].coords[1] > large_g1:
-                large_g1 = enemies[index].coords[1]
-            if enemies[index].coords[1] < small_g1:
-                small_g1 = enemies[index].coords[1]
-        if small_g1 < 10 or large_g1 > 1000:
-            for x in g1:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    enemies[x].direction = -enemies[x].direction
-
-        large_g2 = 0                                        #inverts direction of column if out of bounds
-        small_g2 = 1080
-        for index in g2:
-            if enemies[index].coords[1] > large_g2:
-                large_g2 = enemies[index].coords[1]
-            if enemies[index].coords[1] < small_g2:
-                small_g2 = enemies[index].coords[1]
-        if small_g2 < 10 or large_g2 > 1000:
-            for x in g2:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    enemies[x].direction = -enemies[x].direction
-
-        large_g3 = 0                                        #inverts direction of column if out of bounds
-        small_g3 = 1080
-        for index in g3:
-            if enemies[index].coords[1] > large_g3:
-                large_g3 = enemies[index].coords[1]
-            if enemies[index].coords[1] < small_g3:
-                small_g3 = enemies[index].coords[1]
-        if small_g3 < 10 or large_g3 > 1000:
-            for x in g3:
-                if not isinstance(enemies[x], EnemyProjectile):
-                    enemies[x].direction = -enemies[x].direction
-
-        for x in enemies:
-            x.update()
 
 def renderHUD(coolDown, activeWeapon, fps):
     if stage.title.active:
@@ -1079,6 +1289,18 @@ def renderHUD(coolDown, activeWeapon, fps):
     screen.blit(activeWeaponText, (15, 90))
     screen.blit(frameRate, (1865, 0))
     screen.blit(money, (600,0))
+
+def circ_rect_collide(circleCoords, radius, rect):
+    rectPoints = [
+        [rect.left, rect.top],
+        [rect.left+rect.width, rect.top],
+        [rect.left, rect.top+rect.height],
+        [rect.left+rect.width, rect.top+rect.height]
+    ]
+    for point in rectPoints:
+        if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
+            return True
+    return False
 
      
 if __name__=="__main__":
