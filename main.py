@@ -17,11 +17,12 @@ spawnDelay = 0    #Initial delay before spawning
 explosions = []
 explosionSprites = []
 
-
+enemiesR0 = []
 enemiesR1 = []
 enemiesR2 = []
 enemiesR3 = []
 
+dirR0 = random.choice([1, -1])
 dirR1 = random.choice([1, -1])
 dirR2 = random.choice([1, -1])
 dirR3 = random.choice([1, -1])
@@ -447,7 +448,7 @@ class Enemy(Entity):
         super().__init__()
 
     def positionChooser(self, type):
-        global enemiesR1, enemiesR2, enemiesR3, dirR1, dirR2, dirR3
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
 
         if type == "Strafer":
             self.w = Strafer.width
@@ -461,11 +462,15 @@ class Enemy(Entity):
         iteration = 0
         while True:
             overlap = False
-            POS = [random.choice([950, 1200, 1450, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1450, 1700, 1700, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
             if iteration > 100: #If overcrowded ignore overlaping
                 print("ERROR: Overcrowding")
                 break
-            if POS[0] == 1200 and len(enemiesR1) > 0:
+            if POS[0] == 950 and len(enemiesR0) > 0:
+                for x in enemiesR0:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1200 and len(enemiesR1) > 0:
                 for x in enemiesR1:
                     if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
                         overlap = True
@@ -482,7 +487,9 @@ class Enemy(Entity):
                 
             iteration += 1
 
-        if POS[0] == 1200:
+        if POS[0] == 950:
+            enemiesR0.append(self)
+        elif POS[0] == 1200:
             enemiesR1.append(self)
         elif POS[0] == 1450:
             enemiesR2.append(self)
@@ -497,11 +504,16 @@ class Enemy(Entity):
         return POS, direction
 
     def move(self):
-        global enemiesR1, enemiesR2, enemiesR3, dirR1, dirR2, dirR3
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
 
 
-
-        if self in enemiesR1:
+        if self in enemiesR0:
+            if self.coords[1] <= 0:
+                dirR0 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR0 = -1
+            self.coords[1] += dirR0*Strafer.speed
+        elif self in enemiesR1:
             if self.coords[1] <= 0:
                 dirR1 = 1
             elif self.coords[1] > scrn_h-100:
