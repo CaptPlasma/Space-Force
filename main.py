@@ -1,566 +1,1366 @@
-AW='assets/enemy_shoot.wav'
-AV='BlueTurret'
-AU='Strafer'
-AT='assets/redBoss.png'
-AS='assets/cargoShip.png'
-AR='Laser Cannon'
-AQ='assets/explosion.wav'
-AP='Bomb'
-AO='Laser Beam'
-AN='Stage '
-AM='.png'
-AL='assets/explosion/'
-AK='Comic Sans MS'
-AJ=ValueError
-A9='highscore'
-A8='hs.json'
-A7='Upgrade Shield Regen Speed'
-A6='Upgrade Laser Cannon Speed'
-A5='Upgrade Laser Cannon Cooldown'
-A4='Upgrade Laser Cannon Damage'
-A3=print
-A2=open
-x='Upgrade Bomb Cooldown'
-w='Upgrade Bomb Damage'
-v='Upgrade Laser Beam Duration'
-u='Upgrade Laser Beam Damage'
-m=range
-a=int
-X='Buy Bomb'
-W='Buy Laser Beam'
-T=len
-N=str
-K=isinstance
-H=False
-D=True
-import pygame as B,random as J,math as U,json as q
-B.init()
-B.font.init()
-B.mixer.init()
-b=1920
-Q=1080
-I=B.font.SysFont(AK,30)
-y=60
-g=0
-R=[]
-r=[]
-d=[]
-e=[]
-h=[]
-n=[]
-i=J.choice([1,-1])
-j=J.choice([1,-1])
-k=J.choice([1,-1])
-l=J.choice([1,-1])
-for AA in m(12):r.append(B.image.load(AL+N(AA)+AM))
-class s:
-	def __init__(A):A.background=B.image.load('assets/background.png');A.enemyCap=10;A.toSpawn=10;A.spawned=0;A.stageEnd=300;A.enemyProgression=1;A.level=1;A.bossDead=H;A.changeText=I.render(AN+N(A.level),D,(255,255,255));A.enemies=[];A.test=H;A.shop=AB();A.title=AC();B.mixer.music.load('assets/background.wav');B.mixer.music.set_volume(0.1);B.mixer.music.play(-1)
-	def advance(B):
-		B.level+=1;B.enemyCap=5+U.ceil(B.level**0.5)*5;B.toSpawn=9+B.level;B.spawned=0;B.shop.active=D;B.stageEnd=300;B.changeText=I.render(AN+N(B.level),D,(255,255,255))
-		if B.level%5==0:G.hpMulti+=0.5;A.moneyMulti+=0.1
-		if B.level>=6:B.enemyProgression=4
-		elif B.level>=3:B.enemyProgression=3
-		elif B.level>=2:B.enemyProgression=2
-	def spawnBoss(A):B=[M()];A.enemies.append(J.choice(B.copy()))
-	def paused(A):
-		C.blit(A.background,(0,0))
-		for B in m(T(A.enemies)):A.enemies[B].draw()
-	def update(A):
-		global AX;C.blit(A.background,(0,0))
-		if A.title.active:A.title.update()
-		elif A.shop.active:A.shop.update()
-		elif A.stageEnd>0:A.stageEnd-=1;C.blit(A.changeText,A.changeText.get_rect(center=C.get_rect().center))
-		elif T(A.enemies)==0 and A.spawned>=A.toSpawn:
-			if A.level%5==0:
-				if A.bossDead:A.advance()
-				else:A.spawnBoss()
-			else:A.bossDead=H;A.advance()
-		else:
-			for B in A.enemies:B.update()
-class AB:
-	def __init__(A):A.active=H;A.items={A4:[1,-1,1500,[500,1.2,1.01],[0,0,3]],A5:[1,9,3000,[0,1.5],[0,0]],A6:[1,11,500,[100],[0]],W:[0,1,10000,[],[]],u:[0,-1,10000,[5000,1.2,1.07],[0,0,3]],v:[0,11,100000,[0,2],[0,0]],X:[0,1,30000,[],[]],w:[0,-1,10000,[5000,1.2,1.07],[0,0,3]],x:[0,11,50000,[0,1.5,1.1],[0,0,5]],A7:[1,10,10000,[0,1.5,1.1],[0,0,3]]};A.itemKeys=[A4,A5,A6,W,u,v,X,w,x,A7];A.clickToggle=H
-	def buy(D,item):
-		C=item
-		if C in D.items:
-			B=D.items[C]
-			if C==X and D.items[W]==0:return
-			if(B[0]<B[1]or B[1]==-1)and A.money>=B[2]and(B[0]!=0 or C in[W,X])and not(C==X and D.items[W][0]==0):
-				B[0]+=1;A.money-=a(B[2])
-				for E in m(T(B[4])):
-					if B[0]>B[4][E]:
-						if E==0:B[2]+=B[3][0]
-						elif E==1:B[2]=B[2]*B[3][1]
-						elif E==2:B[2]=B[2]**B[3][2]
-					else:break
-				if C==A4:o.damage+=0.25
-				elif C==A5:A.bullet_firerate-=10
-				elif C==A6:A.bulletSpeed+=3
-				elif C==W:A.unlockedWeapons.append(AO);D.items[u][0]=1;D.items[v][0]=1
-				elif C==u:P.damage+=0.01
-				elif C==v:A.laserDuration+=50
-				elif C==X:D.items[w][0]=1;D.items[x][0]=1;A.unlockedWeapons.append(AP)
-				elif C==w:z.damage+=0.5
-				elif C==x:A.bomb_firerate-=100
-				elif C==A7:A.shieldRegenSpeed=U.ceil(500*0.95**B[0])
-	def display(E):
-		S='Lv. ';J=150;L=200;K=500;M=100;Q=50;R=50;E.buttons=[];G=0
-		for F in E.items:
-			if A.money>=E.items[F][2]and(E.items[F][0]<E.items[F][1]or E.items[F][1]==-1)and(E.items[F][0]!=0 or F in[W,X])and not(F==X and E.items[W][0]==0):O=0,255,0
-			else:O=220,220,220
-			E.buttons.append(B.Rect(J,L,K,M));B.draw.rect(C,O,E.buttons[G]);C.blit(I.render(F,D,(0,0,0)),E.buttons[G]);C.blit(I.render('$'+N(a(E.items[F][2]))[:-2]+'.'+N(a(E.items[F][2]))[-2:],D,(0,0,0)),E.buttons[G].copy().move(0,50))
-			if E.items[F][0]==0 and F not in[W,X]or F==X and E.items[W][0]==0:C.blit(I.render('Locked',D,(0,0,0)),E.buttons[G].copy().move(350,50))
-			elif E.items[F][1]==-1:C.blit(I.render(S+N(E.items[F][0]),D,(0,0,0)),E.buttons[G].copy().move(350,50))
-			elif E.items[F][0]<E.items[F][1]:C.blit(I.render(S+N(E.items[F][0])+'/'+N(E.items[F][1]),D,(0,0,0)),E.buttons[G].copy().move(350,50))
-			elif E.items[F][0]>=E.items[F][1]:C.blit(I.render('Lv. MAX',D,(0,0,0)),E.buttons[G].copy().move(350,50))
-			J+=K+Q
-			if J+K+100>b:J=150;L+=M+R
-			G+=1
-		P=I.render('Press ENTER to Continue',H,(255,255,255));C.blit(P,(C.get_width()/2-P.get_width()/2,3*C.get_height()/4))
-	def detectClick(A):
-		F=B.mouse.get_pos();C=B.mouse.get_pressed()
-		if C[0]and not A.clickToggle:
-			A.clickToggle=D
-			for E in m(T(A.buttons)):
-				if A.buttons[E].collidepoint(F):A.buy(A.itemKeys[E])
-		elif not C[0]:A.clickToggle=H
-	def update(A):
-		C=B.key.get_pressed()
-		if C[B.K_RETURN]:A.active=H
-		A.detectClick();A.display()
-class AC:
-	def __init__(A):C='assets/fonts/IshimuraRegular.otf';A.active=D;A.titleFont=B.font.Font(C,108);A.contFont=B.font.Font(C,44)
-	def display(E):
-		F=E.titleFont.render('Space Force',D,(249,4,5));A=E.contFont.render('Press ENTER to Play!',D,(255,255,255));G=I.render('Press Q to Exit',H,(255,255,255))
-		with A2(A8,'r')as J:K=q.loads(J.read())[A9]
-		B=I.render(f"Highscore: {K}",H,(255,255,255));L=F.get_rect().width;M=A.get_rect().width;N=A.get_rect().height;C.blit(F,(960-L//2,25));C.blit(A,(960-M//2,540-N//2));C.blit(G,(960-G.get_width()//2,C.get_height()-50));C.blit(B,(C.get_width()-B.get_width()-30,C.get_height()-B.get_height()-20))
-	def update(A):
-		C=B.key.get_pressed()
-		if C[B.K_RETURN]:A.active=H
-		A.display()
-class t:
-	def __init__(A):A.dead=H
-class E(t):
-	playerSprite=B.image.load('assets/Ship.png');shieldSprite=B.image.load('assets/Shield.png');width=playerSprite.get_width();height=playerSprite.get_height();shieldWidth=shieldSprite.get_width();shieldHeight=shieldSprite.get_height();laserSound=B.mixer.Sound('assets/laser.wav');laserSound.set_volume(0.2);bulletSound=B.mixer.Sound('assets/bullet.wav');shipHit=B.mixer.Sound('assets/ship_hit.wav');shipHit.set_volume(0.3);shieldHit=B.mixer.Sound('assets/shield_hit.wav');shieldHit.set_volume(0.2);reloadSound=B.mixer.Sound('assets/reloaded.wav');reloadSound.set_volume(0.1);shieldBreak=B.mixer.Sound('assets/shield_break.wav');shieldBreak.set_volume(0.5);shipExplode=B.mixer.Sound(AQ);shipExplode.set_volume(0.5);regenSound=B.mixer.Sound('assets/shield_regen.wav');regenSound.set_volume(0.3);gameLose=B.mixer.Sound('assets/lose.wav');gameLose.set_volume(0.5)
-	def __init__(A):super().__init__();A.coords=[25,(Q-E.height)/2];A.hp=3;A.shield=5;A.shieldMax=5;A.shieldRegenSpeed=500;A.shieldTimer=0;A.speed=3;A.bulletCD=0;A.bullet_firerate=200;A.laserCD=0;A.laser_firerate=1000;A.laserTime=0;A.laserDuration=300;A.bombCD=0;A.bomb_firerate=1500;A.bullets=[];A.bombs=[];A.bulletSpeed=20;A.bulletDistance=b*3/4;A.bombDistance=1450;A.bombRadius=200;A.weapon=0;A.unlockedWeapons=[AR];A.invTime=0;A.money=0;A.moneyMulti=1;A.score=0
-	def getWeapon(A):return A.weapon
-	def switchWeapon(A,slot):
-		A.weapon=slot
-		if A.weapon<0:A.weapon=T(A.unlockedWeapons)-1
-		elif A.weapon>=T(A.unlockedWeapons):A.weapon=0
-	def shoot(A):
-		if A.unlockedWeapons[A.weapon]==AR:
-			if A.bulletCD<=0:A.bullets.append(o(A.coords.copy(),A.bulletSpeed,0));A.bulletCD=A.bullet_firerate;E.bulletSound.play()
-		elif A.unlockedWeapons[A.weapon]==AO:
-			if A.laserCD<=0 and A.laserTime<A.laserDuration:A.bullets.append(P(A.coords.copy(),0));A.laserTime+=1;E.laserSound.play()
-			elif A.laserTime>=A.laserDuration:A.laserCD=A.laser_firerate;A.laserTime=0;E.laserSound.fadeout(300)
-		elif A.unlockedWeapons[A.weapon]==AP:
-			if A.bombCD<=0:A.bombs.append(z(A.coords.copy(),A.bombDistance,A.bombRadius,0));A.bombCD=A.bomb_firerate;E.bulletSound.play()
-	def collide(C,other):
-		D=other
-		if K(D,G)and not C.invTime:
-			C.invTime=50
-			if C.shield:
-				C.shield-=1;F=J.randrange(-25,25);H=0;R.append([50,[0,D.coords[0]+F,D.coords[1]+H]])
-				if C.shield==0:E.shieldBreak.play()
-				else:E.shieldHit.play()
-			else:
-				C.hp-=1;F=J.randrange(-25,25);H=0;R.append([50,[0,D.coords[0]+F,D.coords[1]+H]])
-				if C.hp==0:
-					E.shipExplode.play();B.mixer.stop();B.mixer.music.stop();E.gameLose.play()
-					with A2(A8,'r')as I:L=q.loads(I.read())
-					if L[A9]<A.score:
-						with A2(A8,'w')as I:I.write(q.dumps({A9:A.score}))
-				else:E.shipHit.play()
-			if C.shield<=0:C.shieldTimer=C.shieldRegenSpeed*-1
-	def regenShield(A):
-		if A.shield<A.shieldMax:A.shieldTimer+=1
-		if A.shieldTimer>=A.shieldRegenSpeed:A.shield+=1;E.regenSound.play();A.shieldTimer=0
-	def earn(A,amt):A.money+=amt*A.moneyMulti;A.score+=amt*A.moneyMulti
-	def update(A,shopactive):
-		C.blit(E.playerSprite,A.coords)
-		if not shopactive:
-			A.regenShield()
-			if A.bulletCD>0:
-				A.bulletCD-=1
-				if A.bulletCD==0:E.reloadSound.play()
-			if A.laserCD>0:
-				A.laserCD-=1
-				if A.laserCD==0:E.reloadSound.play()
-			if A.bombCD>0:
-				A.bombCD-=1
-				if A.bombCD==0:E.reloadSound.play()
-			if A.invTime>0:A.invTime-=1
-		if A.shield>0:C.blit(E.shieldSprite,[A.coords[0]-(E.shieldWidth-E.width)/2,A.coords[1]-(E.shieldHeight-E.height)/2])
-		for D in A.bullets:D.update()
-		for B in A.bombs:
-			B.update()
-			if B.dead:A.bombs.remove(B)
-	def paused(A):
-		C.blit(E.playerSprite,A.coords)
-		if A.shield>0:C.blit(E.shieldSprite,[A.coords[0]-(E.shieldWidth-E.width)/2,A.coords[1]-(E.shieldHeight-E.height)/2])
-		for B in A.bullets:B.draw()
-class Y(t):
-	def __init__(A,coords,speed,angle):super().__init__();A.coords=coords;A.speed=speed;A.angle=angle
-	def move(A):
-		A.coords[0]+=U.cos(A.angle)*A.speed;A.coords[1]+=U.sin(A.angle)*A.speed
-		if A.coords[0]>b:A.dead=D
-class o(Y):
-	sprite=B.image.load('assets/playerBullet.png');width=sprite.get_width();height=sprite.get_height();damage=1
-	def __init__(A,coords,speed,angle):super().__init__(coords,speed,angle)
-	def collide(B,other):
-		A=other
-		if K(A,G)and not K(A,f):B.dead=D
-	def update(A):A.move();C.blit(o.sprite,A.coords)
-	def draw(A):C.blit(o.sprite,A.coords)
-class P(Y):
-	baseSprite=B.image.load('assets/laser_base.png');sprite=B.image.load('assets/laser.png');width=sprite.get_width();height=sprite.get_height();baseOffsetY=(baseSprite.get_height()-height)/2;damage=0.05
-	def __init__(C,coords,angle,speed=sprite.get_width()):B=coords;super().__init__([B[0]+A.width*5/7,B[1]+(A.height-P.height)/2],speed,angle)
-	def collide(B,other):
-		A=other
-		if K(A,G)and not K(A,f):B.dead=D
-	def update(B):
-		B.move()
-		if B.coords!=[A.coords[0]+A.width*5/7+P.width,A.coords[1]+(A.height-P.height)/2]:C.blit(P.sprite,B.coords)
-		else:C.blit(P.baseSprite,[B.coords[0],B.coords[1]-P.baseOffsetY])
-	def draw(B):
-		if B.coords!=[A.coords[0]+A.width*5/7+P.width,A.coords[1]+(A.height-P.height)/2]:C.blit(P.sprite,B.coords)
-		else:C.blit(P.baseSprite,[B.coords[0],B.coords[1]-P.baseOffsetY])
-class z(Y):
-	sprite=B.image.load(AS);redSprite=B.image.load(AT);width=sprite.get_width();height=sprite.get_height();bombExplosionSprites=r.copy();damage=5
-	def __init__(A,coords,bombDistance,radius,angle):
-		C=radius;super().__init__(coords,None,angle);A.fuse=400;A.timer=0;A.speed=bombDistance/200;A.radius=C;A.explosionSprites=[]
-		for D in m(12):A.explosionSprites.append(B.transform.scale(B.image.load(AL+N(D)+AM),(C*2,C*2)))
-	def move(A):
-		A.coords[0]+=A.speed
-		if A.speed>0:A.coords[0]+=U.cos(A.angle)*A.speed;A.coords[1]+=U.sin(A.angle)*A.speed;A.speed-=0.04
-		elif A.speed!=0:A.speed=0
-	def explode(A):C.blit(A.explosionSprites[a(A.explosions[0])],(A.explosions[1],A.explosions[2]));A.explosions[0]+=0.25
-	def update(B):
-		B.timer+=1
-		if B.timer<=B.fuse:
-			B.move();C.blit(B.sprite,B.coords)
-			if B.timer==B.fuse:
-				B.explosions=[0,B.coords[0]+B.width/2-B.radius,B.coords[1]+B.height/2-B.radius]
-				for E in F.enemies:
-					if K(E,Z):
-						for G in E.fleetMembers:
-							if A1(B.coords,B.radius,G.sprite.get_rect()):
-								G.hp-=B.damage
-								if G.hp<=0:G.dead=D;E.memberCount-=1;A.earn(G.bounty);E.fleetMembers.remove(G)
-						if E.memberCount==0:E.dead=D;A.earn(E.bounty);F.enemies.remove(E)
-					elif not K(E,f):
-						if A1(B.coords,B.radius,E.sprite.get_rect()):
-							E.hp-=B.damage
-							if E.hp<=0:E.dead=D;A.earn(E.bounty);F.enemies.remove(E)
-		elif B.timer>B.fuse+36:B.dead=D
-		else:B.explode()
-class G(t):
-	hpMulti=1;shipExplode=B.mixer.Sound(AQ);shipExplode.set_volume(0.5);spawnMargin=25
-	def __init__(A):super().__init__()
-	def positionChooser(C,type):
-		global d,e,h,n,i,j,k,l
-		if type==AU:C.w=O.width;C.h=O.height
-		elif type==AV:C.w=S.width;C.h=S.height
-		F=0
-		while D:
-			E=H;A=[J.choice([950,1200,1200,1450,1450,1700,1700]),J.randint(Q/2-O.height*5,Q/2+O.height*4)]
-			if F>100:A3('ERROR: Overcrowding');break
-			if A[0]==950 and T(d)>0:
-				for B in d:
-					if not(A[1]+C.h+G.spawnMargin<B.coords[1]or A[1]>B.coords[1]+B.h+G.spawnMargin):E=D
-			elif A[0]==1200 and T(e)>0:
-				for B in e:
-					if not(A[1]+C.h+G.spawnMargin<B.coords[1]or A[1]>B.coords[1]+B.h+G.spawnMargin):E=D
-			elif A[0]==1450:
-				for B in h:
-					if not(A[1]+C.h+G.spawnMargin<B.coords[1]or A[1]>B.coords[1]+B.h+G.spawnMargin):E=D
-			elif A[0]==1700:
-				for B in n:
-					if not(A[1]+C.h+G.spawnMargin<B.coords[1]or A[1]>B.coords[1]+B.h+G.spawnMargin):E=D
-			if E==H:break
-			F+=1
-		if A[0]==950:d.append(C)
-		elif A[0]==1200:e.append(C)
-		elif A[0]==1450:h.append(C)
-		else:n.append(C)
-		I=J.choice([-1,1]);return A,I
-	def move(A):
-		global d,e,h,n,i,j,k,l
-		if A in d:
-			if A.coords[1]<=0:i=1
-			elif A.coords[1]>Q-100:i=-1
-			A.coords[1]+=i*O.speed
-		elif A in e:
-			if A.coords[1]<=0:j=1
-			elif A.coords[1]>Q-100:j=-1
-			A.coords[1]+=j*O.speed
-		elif A in h:
-			if A.coords[1]<=0:k=1
-			elif A.coords[1]>Q-100:k=-1
-			A.coords[1]+=k*O.speed
-		else:
-			if A.coords[1]<=0:l=1
-			elif A.coords[1]>Q-100:l=-1
-			A.coords[1]+=l*O.speed
-class O(G):
-	sprite=B.image.load(AS);bounty=100;speed=1;width=sprite.get_width();height=sprite.get_height()
-	def __init__(A):super().__init__();A.coords,A.direction=A.positionChooser(AU);A.hp=1*G.hpMulti
-	def collide(A,other):
-		B=other
-		if K(B,Y):
-			A.hp-=B.damage
-			if A.hp<=0:A.dead=D
-			G.shipExplode.play()
-	def update(A):A.move();C.blit(O.sprite,A.coords)
-	def draw(A):C.blit(O.sprite,A.coords)
-class S(G):
-	sprite=B.image.load('assets/blueTurret.png');bounty=200;speed=0.5;firerate=300;width=sprite.get_width();height=sprite.get_height();bulletSound=B.mixer.Sound(AW);bulletSound.set_volume(0.08)
-	def __init__(A):super().__init__();A.coords,A.direction=A.positionChooser(AV);A.cooldown=S.firerate;A.hp=3*G.hpMulti
-	def shoot(A):
-		if A.cooldown<=0:S.bulletSound.play();F.enemies.append(c([A.coords[0],A.coords[1]+(S.height-c.height)/2]));A.cooldown=S.firerate
-	def collide(A,other):
-		B=other
-		if K(B,Y):
-			A.hp-=B.damage
-			if A.hp<=0:A.dead=D;G.shipExplode.play()
-	def update(A):A.cooldown-=1;A.move();A.shoot();C.blit(S.sprite,A.coords)
-	def draw(A):C.blit(S.sprite,A.coords)
-class f(G):
-	def __init__(A,coords):super().__init__();A.coords=coords
-	def collide(A,other):
-		if K(other,E):A.dead=D
-class c(f):
-	sprite=B.image.load('assets/EnemyBullet.png');speed=10;width=sprite.get_width();height=sprite.get_height()
-	def __init__(A,coords):super().__init__(coords)
-	def move(A):
-		A.coords[0]-=c.speed
-		if A.coords[0]<=0-c.width:A.dead=D
-	def update(A):A.move();C.blit(c.sprite,A.coords)
-	def draw(A):C.blit(c.sprite,A.coords)
-class V(G):
-	sprite=B.transform.scale(B.image.load('assets/EnemySuicide.png'),(50,50));bounty=250;speed=10;width=sprite.get_width();height=sprite.get_height();prepTime=500
-	def __init__(A):super().__init__();A.coords=[J.randint(b/2,b*3/4),J.randint(100,Q-100)];A.time=V.prepTime;A.hp=0.5*G.hpMulti
-	def move(B):
-		if B.time>0:B.angle=U.atan((B.coords[1]-A.coords[1])/(B.coords[0]-A.coords[0]));B.coords[0]+=V.speed/100
-		else:
-			B.coords[0]-=U.cos(B.angle)*V.speed;B.coords[1]-=U.sin(B.angle)*V.speed
-			if B.coords[0]<=0-V.width:B.dead=D
-	def collide(A,other):
-		B=other
-		if K(B,E):A.hp=0;A.dead=D;G.shipExplode.play()
-		elif K(B,Y):
-			A.hp-=B.damage
-			if A.hp<=0:A.dead=D
-	def update(A):
-		if A.time:A.time-=1
-		A.move();C.blit(V.sprite,A.coords)
-	def draw(A):C.blit(V.sprite,A.coords)
-class Z(G):
-	bounty=250;speed=1
-	def __init__(A):
-		super().__init__();A.coords=[b,J.randint(0,L.height*5)];A.fleetMembers=[L([A.coords[0]+L.width*2,A.coords[1]]),L([A.coords[0]+L.width,A.coords[1]+L.height]),L([A.coords[0],A.coords[1]+L.height*2]),L([A.coords[0]+L.width,A.coords[1]+L.height*3]),L([A.coords[0]+L.width*2,A.coords[1]+L.height*4])]
-		for B in A.fleetMembers:B.speed=A.speed
-		A.memberCount=T(A.fleetMembers);A.bountyMsg=I.render('Wipe out the insurgent convoy to claim a large bounty!',D,(255,255,255))
-	def move(A):
-		A.coords[0]-=A.speed
-		if A.coords[0]+L.width*3<0:
-			for B in A.fleetMembers:A.fleetMembers.remove(B)
-			A.dead=D
-	def update(B):
-		if T(B.fleetMembers)<=0:
-			B.dead=D
-			if B.memberCount<=0:A.earn(Z.bounty)
-			return
-		C.blit(B.bountyMsg,(C.get_rect().centerx-B.bountyMsg.get_width()/2,B.bountyMsg.get_height()*2));B.move()
-		for E in B.fleetMembers:
-			if E.dead:B.fleetMembers.remove(E);continue
-			E.update()
-	def draw(B):
-		if T(B.fleetMembers)<=0:
-			B.dead=D
-			if B.memberCount<=0:A.earn(Z.bounty)
-			return
-		for C in B.fleetMembers:
-			if C.dead:B.fleetMembers.remove(C);continue
-			C.draw()
-class L(G):
-	sprite=B.image.load('assets/convoyShip.png');bounty=20;speed=1;width=sprite.get_width();height=sprite.get_height()
-	def __init__(A,coords):super().__init__();A.hp=1*G.hpMulti;A.coords=coords
-	def move(A):A.coords[0]-=A.speed
-	def collide(A,other):
-		B=other
-		if K(B,Y):
-			A.hp-=B.damage
-			if A.hp<=0:A.dead=D
-		elif K(B,E):A.hp=0;A.dead=D;G.shipExplode.play()
-	def update(A):A.move();C.blit(L.sprite,A.coords)
-	def draw(A):C.blit(L.sprite,A.coords)
-class AD(G):
-	bounty=10000
-	def __init__(A):super().__init__();A.bounty*=F.level/5
-	def collide(A,other):
-		B=other
-		if K(B,Y):
-			A.hp-=B.damage
-			if A.hp<=0:A.dead=D;F.bossDead=D
-class M(AD):
-	sprite=B.image.load(AT);firerate=100;suicide_firerate=500;speed=0.5;width=sprite.get_width();height=sprite.get_height();bulletSound=B.mixer.Sound(AW);bulletSound.set_volume(0.08)
-	def __init__(A):super().__init__();A.coords=[(b-M.width)*4/5,(Q-M.height)/2];A.hp=20*G.hpMulti;A.cooldown=M.firerate;A.suicideCooldown=M.suicide_firerate;A.direction=J.choice([-1,1]);A.bossBar=p(A.coords[0],A.coords[1],M.sprite.get_width(),13,'',maxval=A.hp,color=(255,0,0))
-	def move(A):
-		if A.coords[1]<=0:A.direction=1
-		elif A.coords[1]>=Q-M.height:A.direction=-1
-		A.coords[1]+=A.direction*M.speed
-	def shoot(A):
-		if A.cooldown<=0:M.bulletSound.play();F.enemies.append(c([A.coords[0],A.coords[1]+(M.height-M.height)/2]));A.cooldown=M.firerate
-		if A.suicideCooldown<=0:F.enemies.append(V());A.suicideCooldown=M.suicide_firerate
-	def update(A):A.cooldown-=1;A.suicideCooldown-=1;A.move();A.shoot();C.blit(M.sprite,A.coords);A.bossBar.update(A.hp);A.bossBar.x=A.coords[0];A.bossBar.y=A.coords[1]+M.sprite.get_height()+25;A.bossBar.display()
-	def draw(A):C.blit(M.sprite,A.coords);A.bossBar.display()
-class p:
-	def __init__(A,xpos,ypos,width,height,title,maxval=10,notch=H,color=(0,255,0)):super().__init__();A.value=0;A.maxvalue=maxval;A.w=width;A.h=height;A.x=xpos;A.y=ypos;A.title=title;A.notch=notch;A.color=color
-	def display(A):
-		if F.title.active:return
-		B.draw.rect(C,(255,255,255),B.Rect(A.x,A.y,A.w,A.h));B.draw.rect(C,A.color,B.Rect(A.x,A.y,A.value/A.maxvalue*A.w,A.h));G=I.render(A.title,D,(255,255,255));C.blit(G,(A.x+A.w+15,A.y-5))
-		if A.notch:
-			for E in m(A.maxvalue):B.draw.line(C,(0,0,0),(A.x+E*(A.w/A.maxvalue),A.y),(A.x+E*(A.w/A.maxvalue),A.y+A.h))
-	def update(A,val):A.value=val
-def AE():
-	h='Score: ';global C,F,A;Y=0;Z=0;L=H;P=D;S=B.time.Clock();B.display.set_caption('Space Invaders');C=B.display.set_mode((1920,1080),B.FULLSCREEN|B.SCALED);F=s();A=E();a=p(15,10,100,35,'Health',maxval=A.hp,notch=D,color=(255,0,0));b=p(15,55,100,35,'Shield',maxval=A.shieldMax,notch=D,color=(30,50,255));J=p(250,10,100,35,'Cooldown');c=B.font.SysFont(AK,300);O=c.render('Game Over!',H,(200,0,0));K=I.render(h+N(A.score),H,(255,255,255));K.set_alpha(0);T=-c.get_height();V=1;g=0.1;d=0
-	while P:
-		if F.test:
-			A.money+=100
-			if F.level<8:F.level=8
-		C.fill((0,0,0))
-		if L:F.paused();A.paused()
-		else:F.update();A.update(F.shop.active)
-		a.update(A.hp);b.update(A.shield)
-		if A.getWeapon()==0:J.update(J.maxvalue-A.bulletCD/A.bullet_firerate*J.maxvalue)
-		elif A.getWeapon()==1:
-			if A.laserTime>0:J.update(J.maxvalue-A.laserTime/A.laserDuration*J.maxvalue)
-			else:J.update(J.maxvalue-A.laserCD/A.laser_firerate*J.maxvalue)
-		elif A.getWeapon()==2:J.update(J.maxvalue-A.bombCD/A.bomb_firerate*J.maxvalue)
-		a.display();b.display();J.display();A0(Y,Z,S.get_fps())
-		for W in B.event.get():
-			if W.type==B.QUIT:P=H
-			if W.type==B.MOUSEWHEEL:A.switchWeapon(A.getWeapon()+W.y*-1)
-		G=B.key.get_pressed();A0(Y,Z,S.get_fps())
-		if A.hp<=0:
-			L=D;M=B.Surface((C.get_width(),C.get_height()));M.set_alpha(120);M.fill((0,0,0));C.blit(M,(0,0));C.blit(O,(C.get_width()/2-O.get_width()/2,T))
-			if d>5:
-				C.blit(K,(C.get_width()/2-K.get_width()/2,C.get_height()/2+O.get_height()/2));K.set_alpha(min(254,K.get_alpha()+1));e=I.render('Press E to Return to Main Menu',H,(255,255,255));C.blit(e,(C.get_width()/2-e.get_width()/2,C.get_height()/2+O.get_height()/2+K.get_height()+30))
-				if G[B.K_e]:F=s();A=E();L=H
-			else:
-				K=I.render(h+N(A.score),H,(255,255,255));K.set_alpha(0);T+=V
-				if T<C.get_height()/2-O.get_height()*3/5:V+=g
-				else:V*=-0.5;d+=1
-				if G[B.K_RETURN]:return
-		elif not L:
-			if(G[B.K_UP]or G[B.K_w])and A.coords[1]-(E.shieldHeight-E.height)/2>0:A.coords[1]-=A.speed
-			if(G[B.K_DOWN]or G[B.K_s])and A.coords[1]+(E.shieldHeight-E.height/2)<Q:A.coords[1]+=A.speed
-			if G[B.K_1]:A.switchWeapon(0)
-			if G[B.K_2]:A.switchWeapon(1)
-			if G[B.K_SPACE]:A.shoot()
-			elif A.getWeapon()==1 and A.laserTime!=A.laserDuration and A.laserTime!=0:A.laserCD=U.floor(A.laser_firerate*max(0.5,A.laserTime/A.laserDuration));A.laserTime=0;E.laserSound.fadeout(300)
-			if G[B.K_ESCAPE]:L=D
-			if G[B.K_UP]and G[B.K_DOWN]and G[B.K_RIGHT]and G[B.K_LEFT]and G[B.K_b]and G[B.K_a]and not F.test:F.test=D;A3('=========TESTING=========')
-			if G[B.K_q]and F.title.active:P=H
-			AH(F.enemies);AG();AF(R)
-		else:
-			M=B.Surface((C.get_width(),C.get_height()));M.set_alpha(120);M.fill((0,0,0));C.blit(M,(0,0));X=I.render('Press ENTER to Resume',H,(255,255,255));f=I.render('Press E to Exit to Main Menu',H,(255,255,255));C.blit(X,(C.get_width()/2-X.get_width()/2,C.get_height()/2));C.blit(f,(C.get_width()/2-f.get_width()/2,C.get_height()/2+X.get_height()+15))
-			if G[B.K_RETURN]:L=H
-			if G[B.K_e]:F=s();A=E();L=H
-		B.display.flip();S.tick(120)
-def AF(explosions):
-	E=explosions
-	if T(E)!=0:
-		for D in E:
-			F=[]
-			for G in r:F.append(B.transform.scale(G,(D[0]*1.5,D[0]*1.5)))
-			A=D[1]
-			if A[0]%2==0:H=F[A[0]//2].get_height();C.blit(F[A[0]//2],(A[1]+50,A[2]-H/2))
-			A[0]+=1
-			if A[0]>22:E.remove(D)
-def AG():
-	for B in A.bullets:
-		B.update()
-		if B.dead:A.bullets.remove(B);continue
-		for C in F.enemies:
-			if not K(C,f)and not K(C,Z):
-				if C.coords[0]<=B.coords[0]+B.width and C.coords[0]+C.width>=B.coords[0]and C.coords[1]<=B.coords[1]+B.height and C.coords[1]+C.height>=B.coords[1]:
-					C.collide(B);B.collide(C);E=J.randrange(-25,25);G=0
-					if C.dead:
-						A.earn(C.bounty);F.enemies.remove(C)
-						try:
-							if C.width>C.height:R.append([C.width,[0,B.coords[0]+E,B.coords[1]+G]])
-							else:R.append([C.height,[0,B.coords[0]+E,B.coords[1]+G]])
-						except:R.append([100,[0,B.coords[0]+E,B.coords[1]+G]])
-					else:R.append([50,[0,B.coords[0]+E,B.coords[1]+G]])
-					if B.dead:
-						try:A.bullets.remove(B)
-						except AJ:pass
-					break
-			elif K(C,Z):
-				for D in C.fleetMembers:
-					if D.coords[0]<=B.coords[0]+B.width and D.coords[0]+D.width>=B.coords[0]and D.coords[1]<=B.coords[1]+B.height and D.coords[1]+D.height>=B.coords[1]:
-						D.collide(B);B.collide(D);E=J.randrange(-25,25);G=0
-						if D.dead:
-							A.earn(D.bounty);C.memberCount-=1
-							try:
-								if C.width>C.height:R.append([C.width,[0,B.coords[0]+E,B.coords[1]+G]])
-								else:R.append([C.height,[0,B.coords[0]+E,B.coords[1]+G]])
-							except:R.append([100,[0,B.coords[0]+E,B.coords[1]+G]])
-						else:R.append([50,[0,B.coords[0]+E,B.coords[1]+G]])
-						if B.dead:
-							try:A.bullets.remove(B)
-							except AJ:pass
-						break
-def AH(enemies):
-	D=enemies;global y;global g
-	if F.shop.active or F.title.active:return
-	E=0
-	if g==0:
-		for B in D:
-			if not K(B,f):E+=1
-		if E<F.enemyCap and F.spawned<F.toSpawn:AI(D);F.spawned+=1;g=y
-	if g!=0:g-=1
-	for B in D:
-		if K(B,Z):
-			for C in B.fleetMembers:
-				if C.coords[0]<=A.coords[0]+A.width and C.coords[0]+C.width>=A.coords[0]and C.coords[1]<=A.coords[1]+A.height and C.coords[1]+C.height>=A.coords[1]:A.collide(B);C.collide(A)
-			if B.dead:D.remove(B)
-			else:B.update()
-		else:
-			if B.coords[0]<=A.coords[0]+A.width and B.coords[0]+B.width>=A.coords[0]and B.coords[1]<=A.coords[1]+A.height and B.coords[1]+B.height>=A.coords[1]:A.collide(B);B.collide(A)
-			if B.dead:D.remove(B)
-			else:B.update()
-def AI(enemies):
-	A=enemies
-	if F.enemyProgression==1:A.append(O())
-	elif F.enemyProgression==2:
-		B=J.randint(0,1)
-		if B==0:A.append(O())
-		else:A.append(S())
-	elif F.enemyProgression==3:
-		B=J.randint(0,2)
-		if B==0:A.append(O())
-		elif B==1:A.append(S())
-		else:A.append(Z())
-	elif F.enemyProgression==4:
-		B=J.randint(0,3)
-		if B==0:A.append(O())
-		elif B==1:A.append(S())
-		elif B==2:A.append(Z())
-		else:A.append(V())
-	else:A3('ERROR: Stage above 4')
-def A0(coolDown,activeWeapon,fps):
-	if F.title.active:return
-	E=I.render(A.unlockedWeapons[A.getWeapon()]+' Active',D,(255,255,255))
-	if A.money<10:B=I.render('$0.0'+N(a(A.money)),D,(255,255,255))
-	elif A.money<100:B=I.render('$0.'+N(a(A.money)),D,(255,255,255))
-	else:B=I.render('$'+N(a(A.money))[:-2]+'.'+N(a(A.money))[-2:],D,(255,255,255))
-	G=I.render(N(a(fps)),H,(0,255,0));C.blit(E,(15,100));C.blit(G,(1865,0));C.blit(B,(600,0))
-def A1(circleCoords,radius,rect):
-	B=circleCoords;A=rect;E=[[A.left,A.top],[A.left+A.width,A.top],[A.left,A.top+A.height],[A.left+A.width,A.top+A.height]]
-	for C in E:
-		if radius<((B[0]-C[0])**2+(B[1]-C[1])**2)**0.5:return D
-	return H
-if __name__=='__main__':AE()
+import pygame, random, math, json
+ 
+pygame.init()
+pygame.font.init()
+pygame.mixer.init()
+
+scrn_w = 1920
+scrn_h = 1080
+
+my_font = pygame.font.SysFont('Comic Sans MS', 30)
+
+spawnRate = 60     #interval before enemies spawn
+spawnDelay = 0    #Initial delay before spawning
+
+explosions = []
+rawExplosionSprites = []
+
+enemiesR0 = []
+enemiesR1 = []
+enemiesR2 = []
+enemiesR3 = []
+
+dirR0 = random.choice([1, -1])
+dirR1 = random.choice([1, -1])
+dirR2 = random.choice([1, -1])
+dirR3 = random.choice([1, -1])
+
+for x in range(12):
+    rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
+
+class Stage():
+    def __init__(self):
+        self.background = pygame.image.load("assets/background.png")
+        self.enemyCap = 10
+        self.toSpawn = 10
+        self.spawned = 0
+        self.stageEnd = 300
+        self.enemyProgression = 1
+        self.level = 1
+        self.bossDead = False
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
+        self.enemies = []
+        self.test = False
+        self.shop = Shop()
+        self.title = Title()
+
+        #music
+        pygame.mixer.music.load("assets/background.wav")#
+        pygame.mixer.music.set_volume(0.1)#
+        pygame.mixer.music.play(-1)# 
+    
+
+    def advance(self):
+        self.level += 1
+        self.enemyCap = 5+math.ceil(self.level**.5)*5
+        self.toSpawn = 9+self.level
+        self.spawned = 0
+        self.shop.active = True
+        self.stageEnd = 300
+        self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
+
+        # boss rewards
+        if self.level%5 == 0:
+            Enemy.hpMulti += 0.5
+            player.moneyMulti += 0.1
+
+        # unlock enemies
+        if self.level >= 6:
+            self.enemyProgression = 4
+        elif self.level >= 3:
+            self.enemyProgression = 3
+        elif self.level >= 2:
+            self.enemyProgression = 2
+
+    def spawnBoss(self):
+        bossTypes = [MegaShip()]
+        self.enemies.append(random.choice(bossTypes.copy()))
+
+    def paused(self):
+        screen.blit(self.background, (0,0))
+
+        for enemy in range(len(self.enemies)):
+            self.enemies[enemy].draw()
+    
+    def update(self):
+        global titleActive
+        screen.blit(self.background, (0,0))
+        
+
+        if self.title.active:
+            self.title.update()
+        elif self.shop.active:
+            self.shop.update()
+        elif self.stageEnd > 0:
+            self.stageEnd -= 1
+            screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
+        elif len(self.enemies) == 0 and self.spawned >= self.toSpawn:
+            if self.level%5 == 0:
+                if self.bossDead:
+                    self.advance()
+                else:
+                    self.spawnBoss()
+            else:
+                self.bossDead = False
+                self.advance()
+        else:
+            for enemy in self.enemies:
+                enemy.update()
+
+class Shop():
+    def __init__(self):
+        self.active = False
+        self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
+            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3]],
+            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
+            "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
+            "Buy Laser Beam": [0, 1, 10000, [], []],
+            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
+            "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
+            "Buy Bomb": [0, 1, 30000, [], []],
+            "Upgrade Bomb Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
+            "Upgrade Bomb Cooldown": [0, 11, 50000, [0, 1.5, 1.1], [0, 0, 5]],
+            "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
+        }
+        self.itemKeys = [
+            "Upgrade Laser Cannon Damage",
+            "Upgrade Laser Cannon Cooldown",
+            "Upgrade Laser Cannon Speed",
+            "Buy Laser Beam",
+            "Upgrade Laser Beam Damage",
+            "Upgrade Laser Beam Duration",
+            "Buy Bomb",
+            "Upgrade Bomb Damage",
+            "Upgrade Bomb Cooldown",
+            "Upgrade Shield Regen Speed"
+        ]
+        self.clickToggle = False
+    
+    def buy(self, item):
+        if item in self.items:
+            upgrade = self.items[item]
+            if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
+                return
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
+                upgrade[0] += 1
+                player.money -= int(upgrade[2])
+                for scale in range(len(upgrade[4])):
+                    if upgrade[0] > upgrade[4][scale]:
+                        if scale == 0:
+                            upgrade[2] += upgrade[3][0]
+                        elif scale == 1:
+                            upgrade[2] = upgrade[2] * upgrade[3][1]
+                        elif scale == 2:
+                            upgrade[2] = upgrade[2] ** upgrade[3][2]
+                    else:
+                        break
+                if item == "Upgrade Laser Cannon Damage":
+                    Bullet.damage += 0.25
+                elif item == "Upgrade Laser Cannon Cooldown":
+                    player.bullet_firerate -= 10
+                elif item == "Upgrade Laser Cannon Speed":
+                    player.bulletSpeed += 3
+                elif item == "Buy Laser Beam":
+                    player.unlockedWeapons.append("Laser Beam")
+                    self.items["Upgrade Laser Beam Damage"][0] = 1
+                    self.items["Upgrade Laser Beam Duration"][0] = 1
+                elif item == "Upgrade Laser Beam Damage":
+                    Laser.damage += 0.01
+                elif item == "Upgrade Laser Beam Duration":
+                    player.laserDuration += 50
+                elif item == "Buy Bomb":
+                    self.items["Upgrade Bomb Damage"][0] = 1
+                    self.items["Upgrade Bomb Cooldown"][0] = 1
+                    player.unlockedWeapons.append("Bomb")
+                elif item == "Upgrade Bomb Damage":
+                    Bomb.damage += 0.5
+                elif item == "Upgrade Bomb Cooldown":
+                    player.bomb_firerate -= 100
+                elif item == "Upgrade Shield Regen Speed":
+                    player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
+
+    def display(self):
+        x_offset = 150
+        y_offset = 200
+        button_w = 500
+        button_h = 100
+        spacing_w = 50
+        spacing_h = 50
+        self.buttons = []
+        button = 0
+        for key in self.items:
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
+                color = (0, 255, 0)
+            else:
+                color = (220, 220, 220)
+            self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
+            pygame.draw.rect(screen, color, self.buttons[button])
+            screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
+            screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
+            if (self.items[key][0] == 0 and key not in ["Buy Laser Beam", "Buy Bomb"]) or (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
+                screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+            elif self.items[key][1] == -1:
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
+            elif self.items[key][0] < self.items[key][1]:
+                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+            elif self.items[key][0] >= self.items[key][1]:
+                screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
+            x_offset += button_w + spacing_w
+            if x_offset + button_w + 100 > scrn_w:
+                x_offset = 150
+                y_offset += button_h + spacing_h
+            button += 1
+        
+        continue_text = my_font.render("Press ENTER to Continue", False, (255, 255, 255))
+        screen.blit(continue_text, (screen.get_width()/2 - continue_text.get_width()/2, 3*screen.get_height()/4))
+
+    def detectClick(self):
+        pos = pygame.mouse.get_pos()
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0] and not self.clickToggle:
+            self.clickToggle = True
+            for button in range(len(self.buttons)):
+                if self.buttons[button].collidepoint(pos):
+                    self.buy(self.itemKeys[button])
+        elif not mouse[0]:
+            self.clickToggle = False
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            self.active = False
+        self.detectClick()
+        self.display()
+
+
+class Title():
+    def __init__(self):
+        self.active = True
+        self.titleFont = pygame.font.Font("assets/fonts/IshimuraRegular.otf", 108)
+        self.contFont = pygame.font.Font("assets/fonts/IshimuraRegular.otf", 44)
+
+    def display(self):
+        title = self.titleFont.render("Space Force", True, (249,4,5))
+        cont = self.contFont.render("Press ENTER to Play!", True, (255, 255, 255))
+        quit_text = my_font.render("Press Q to Exit", False, (255, 255, 255))
+
+        with open('hs.json', 'r') as f:
+            hs = json.loads(f.read())["highscore"]
+        highscore_text = my_font.render(f"Highscore: {hs}", False, (255, 255, 255))
+        
+        tW = title.get_rect().width
+        contW = cont.get_rect().width
+        contH = cont.get_rect().height
+        screen.blit(title, (960-(tW//2),25))
+
+        screen.blit(cont, (960-(contW//2), 540 - (contH//2)))
+
+        screen.blit(quit_text, (960-(quit_text.get_width()//2), screen.get_height() - 50))
+
+        screen.blit(highscore_text, (screen.get_width()-highscore_text.get_width() - 30, screen.get_height() - highscore_text.get_height() - 20))
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            self.active = False
+        self.display()
+
+
+
+
+class Entity():
+    def __init__(self):
+        self.dead = False
+
+class Player(Entity):
+    playerSprite = pygame.image.load("assets/Ship.png")
+    shieldSprite = pygame.image.load("assets/Shield.png")
+    width = playerSprite.get_width()
+    height = playerSprite.get_height()
+    shieldWidth = shieldSprite.get_width()
+    shieldHeight = shieldSprite.get_height()
+
+    #sfx
+    laserSound = pygame.mixer.Sound("assets/laser.wav")#
+    laserSound.set_volume(0.2)
+    bulletSound = pygame.mixer.Sound("assets/bullet.wav")#
+    shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
+    shipHit.set_volume(0.3)
+    shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
+    shieldHit.set_volume(0.2)
+    reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
+    reloadSound.set_volume(0.1)
+    shieldBreak = pygame.mixer.Sound("assets/shield_break.wav")
+    shieldBreak.set_volume(0.5)
+    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode.set_volume(0.5)
+    regenSound = pygame.mixer.Sound("assets/shield_regen.wav")
+    regenSound.set_volume(0.3)
+    gameLose = pygame.mixer.Sound("assets/lose.wav")
+    gameLose.set_volume(0.5)
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [25, (scrn_h-Player.height)/2]
+        self.hp = 3
+        self.shield = 5
+        self.shieldMax = 5
+        self.shieldRegenSpeed = 500
+        self.shieldTimer = 0
+        self.speed = 3
+        self.bulletCD = 0
+        self.bullet_firerate = 200
+        self.laserCD = 0
+        self.laser_firerate = 1000
+        self.laserTime = 0
+        self.laserDuration = 300
+        self.bombCD = 0
+        self.bomb_firerate = 1500
+        self.bullets = []
+        self.bombs = []
+        self.bulletSpeed = 20
+        self.bulletDistance = scrn_w*3/4
+        self.bombDistance = 1450
+        self.bombRadius = 200
+        self.weapon = 0
+        self.unlockedWeapons = ["Laser Cannon"]
+        self.invTime = 0
+        self.money=0
+        self.moneyMulti = 1
+        self.score = 0
+
+    def getWeapon(self):
+        return self.weapon
+
+    def switchWeapon(self, slot):
+        self.weapon = slot
+        if self.weapon < 0:
+            self.weapon = len(self.unlockedWeapons)-1
+        elif self.weapon >= len(self.unlockedWeapons):
+            self.weapon = 0
+
+    def shoot(self):
+        if self.unlockedWeapons[self.weapon] == "Laser Cannon":
+            if self.bulletCD <= 0:
+                self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
+                self.bulletCD = self.bullet_firerate
+                Player.bulletSound.play()
+        elif self.unlockedWeapons[self.weapon] == "Laser Beam":
+            if self.laserCD <= 0 and self.laserTime < self.laserDuration:
+                self.bullets.append(Laser(self.coords.copy(), 0))
+                self.laserTime += 1
+                Player.laserSound.play()
+            elif self.laserTime >= self.laserDuration:
+                self.laserCD = self.laser_firerate
+                self.laserTime = 0
+                Player.laserSound.fadeout(300)
+        elif self.unlockedWeapons[self.weapon] == "Bomb":
+            if self.bombCD <= 0:
+                self.bombs.append(Bomb(self.coords.copy(), self.bombDistance, self.bombRadius, 0))
+                self.bombCD = self.bomb_firerate
+                Player.bulletSound.play()
+
+    def collide(self, other):
+        if isinstance(other, Enemy) and not self.invTime:
+            self.invTime = 50
+            if self.shield:
+                self.shield -= 1
+                x_offset = random.randrange(-25, 25)
+                y_offset = 0
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
+                if self.shield == 0:
+                    Player.shieldBreak.play()
+                else:
+                    Player.shieldHit.play()
+
+            else:
+                self.hp -= 1
+                x_offset = random.randrange(-25, 25)
+                y_offset = 0
+                explosions.append([50, [0, other.coords[0] + x_offset, other.coords[1] + y_offset]])
+                if self.hp == 0:
+                    Player.shipExplode.play()
+                    pygame.mixer.stop()
+                    pygame.mixer.music.stop()
+                    Player.gameLose.play()
+                    
+                    #highscore
+                    with open('hs.json', 'r') as f:
+                        hs = json.loads(f.read())
+
+                    if hs['highscore'] < player.score:
+                        with open('hs.json', 'w') as f:
+                            f.write(json.dumps({"highscore": player.score}))
+
+                else:
+                    Player.shipHit.play()
+
+            if self.shield <= 0:
+                self.shieldTimer = self.shieldRegenSpeed * -1
+    
+    def regenShield(self):
+        if self.shield < self.shieldMax:
+            self.shieldTimer += 1
+        if self.shieldTimer >= self.shieldRegenSpeed:
+            self.shield += 1
+            Player.regenSound.play()
+            self.shieldTimer = 0
+
+    def earn(self, amt):
+        self.money += amt*self.moneyMulti
+        self.score += amt*self.moneyMulti
+
+    def update(self, shopactive):
+        screen.blit(Player.playerSprite, self.coords)
+        
+        if not shopactive: #only regen shield and reload weapons if not in shop menu
+            self.regenShield()
+
+            if self.bulletCD > 0 :
+                self.bulletCD -= 1
+                if self.bulletCD == 0:
+                    Player.reloadSound.play()
+            if self.laserCD > 0:
+                self.laserCD -= 1
+                if self.laserCD == 0:
+                    Player.reloadSound.play()
+            if self.bombCD > 0:
+                self.bombCD -= 1
+                if self.bombCD == 0:
+                    Player.reloadSound.play()
+            if self.invTime > 0:
+                self.invTime -= 1
+
+        if self.shield > 0:
+            screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
+        for bullet in self.bullets:
+            bullet.update()
+        for bomb in self.bombs:
+            bomb.update()
+            if bomb.dead:
+                self.bombs.remove(bomb)
+
+    def paused(self):
+        screen.blit(Player.playerSprite, self.coords)
+        if self.shield > 0:
+            screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
+
+        for bullet in self.bullets:
+            bullet.draw()
+
+class PlayerProjectile(Entity):
+    def __init__(self, coords, speed, angle):
+        super().__init__()
+        self.coords = coords
+        self.speed = speed
+        self.angle = angle
+
+    def move(self):
+        self.coords[0] += math.cos(self.angle)*self.speed
+        self.coords[1] += math.sin(self.angle)*self.speed
+        if self.coords[0] > scrn_w:
+            self.dead = True
+
+class Bullet(PlayerProjectile):
+    sprite = pygame.image.load("assets/playerBullet.png")
+    width = sprite.get_width()
+    height = sprite.get_height()
+    damage = 1
+
+    def __init__(self, coords, speed, angle):
+        super().__init__(coords, speed, angle)
+    
+    def collide(self, other):
+        if isinstance(other, Enemy) and not isinstance(other, EnemyProjectile):
+            self.dead = True
+
+    def update(self):
+        self.move()
+        screen.blit(Bullet.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(Bullet.sprite, self.coords)
+
+class Laser(PlayerProjectile):
+    baseSprite = pygame.image.load("assets/laser_base.png")
+    sprite = pygame.image.load("assets/laser.png")
+    width = sprite.get_width()
+    height = sprite.get_height()
+    baseOffsetY = (baseSprite.get_height()-height)/2
+    damage = 0.05
+
+    def __init__(self, coords, angle, speed=sprite.get_width()):
+        super().__init__([coords[0]+player.width*5/7, coords[1]+(player.height-Laser.height)/2], speed, angle)
+    
+    def collide(self, other):
+        if isinstance(other, Enemy) and not isinstance(other, EnemyProjectile):
+            self.dead = True
+
+    def update(self):
+        self.move()
+        if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
+            screen.blit(Laser.sprite, self.coords)
+        else:
+            screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
+
+    def draw(self):
+        if self.coords != [player.coords[0]+player.width*5/7+Laser.width, player.coords[1]+(player.height-Laser.height)/2]:
+            screen.blit(Laser.sprite, self.coords)
+        else:
+            screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
+
+class Bomb(PlayerProjectile):
+    sprite = pygame.image.load("assets/bomb.png")                                                      #change this
+    width = sprite.get_width()
+    height = sprite.get_height()
+    bombExplosionSprites = rawExplosionSprites.copy()
+    damage = 5
+    
+    def __init__(self, coords, bombDistance, radius, angle):
+        super().__init__(coords, None, angle)
+        self.fuse = 400
+        self.timer = 0
+        self.speed = bombDistance/200
+        self.radius = radius
+        self.explosionSprites = []
+        for e in range(12):
+            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/explosion/"+str(e)+".png"), (radius*2, radius*2)))
+
+    def move(self):
+        self.coords[0] += self.speed
+        if self.speed > 0:
+            self.coords[0] += math.cos(self.angle)*self.speed
+            self.coords[1] += math.sin(self.angle)*self.speed
+            self.speed -= 0.04
+        elif self.speed != 0:
+            self.speed = 0
+
+    def explode(self):
+        screen.blit(self.explosionSprites[int(self.explosions[0])], (self.explosions[1], self.explosions[2]))
+        self.explosions[0] += 0.25
+
+    def update(self):
+        self.timer += 1
+        if self.timer <= self.fuse:
+            self.move()
+            screen.blit(self.sprite, self.coords)
+            if self.timer == self.fuse:
+                self.explosions = [0, self.coords[0]+self.width/2-self.radius, self.coords[1]+self.height/2-self.radius]
+                for enemy in stage.enemies:
+                    if isinstance(enemy, Fleet):
+                        for member in enemy.fleetMembers:
+                            if circ_rect_collide(self.coords, self.radius, member.sprite.get_rect()):
+                                member.hp -= self.damage
+                                if member.hp <= 0:
+                                    member.dead = True
+                                    enemy.memberCount -= 1
+                                    player.earn(member.bounty)
+                                    enemy.fleetMembers.remove(member)
+                        if enemy.memberCount == 0:
+                            enemy.dead = True
+                            player.earn(enemy.bounty)
+                            stage.enemies.remove(enemy)
+                    elif not isinstance(enemy, EnemyProjectile):
+                        if circ_rect_collide(self.coords, self.radius, enemy.sprite.get_rect()):
+                            enemy.hp -= self.damage
+                            if enemy.hp <= 0:
+                                enemy.dead = True
+                                player.earn(enemy.bounty)
+                                stage.enemies.remove(enemy)
+        elif self.timer > self.fuse+36:# add 12 / what is added to self.explosions[0] in self.explode()
+            self.dead = True
+        else:
+            self.explode()
+
+class Enemy(Entity):
+    hpMulti = 1
+    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode.set_volume(0.5)
+    spawnMargin = 25 #Closest 2 ships can spawn (Only affects Strafers and Blue turrets)
+    def __init__(self):
+        super().__init__()
+
+    def positionChooser(self, type):
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
+
+        if type == "Strafer":
+            self.w = Strafer.width
+            self.h = Strafer.height
+        elif type == "BlueTurret":
+            self.w = BlueTurret.width
+            self.h = BlueTurret.height
+
+        #print(type)
+
+        iteration = 0
+        while True:
+            overlap = False
+            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            if iteration > 100: #If overcrowded ignore overlaping
+                print("ERROR: Overcrowding")
+                break
+            if POS[0] == 950 and len(enemiesR0) > 0:
+                for x in enemiesR0:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1200 and len(enemiesR1) > 0:
+                for x in enemiesR1:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1450:
+                for x in enemiesR2:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            elif POS[0] == 1700:
+                for x in enemiesR3:
+                    if not (POS[1]+self.h+Enemy.spawnMargin < x.coords[1] or POS[1] > x.coords[1]+x.h+Enemy.spawnMargin):
+                        overlap = True
+            if overlap == False:
+                break
+                
+            iteration += 1
+
+        if POS[0] == 950:
+            enemiesR0.append(self)
+        elif POS[0] == 1200:
+            enemiesR1.append(self)
+        elif POS[0] == 1450:
+            enemiesR2.append(self)
+        else:
+            enemiesR3.append(self)
+        
+        
+        
+
+        direction = random.choice([-1,1])
+
+        return POS, direction
+
+    def move(self):
+        global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
+
+
+        if self in enemiesR0:
+            if self.coords[1] <= 0:
+                dirR0 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR0 = -1
+            self.coords[1] += dirR0*Strafer.speed
+        elif self in enemiesR1:
+            if self.coords[1] <= 0:
+                dirR1 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR1 = -1
+            self.coords[1] += dirR1*Strafer.speed
+        elif self in enemiesR2:
+            if self.coords[1] <= 0:
+                dirR2 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR2 = -1
+            self.coords[1] += dirR2*Strafer.speed
+        else:
+            if self.coords[1] <= 0:
+                dirR3 = 1
+            elif self.coords[1] > scrn_h-100:
+                dirR3 = -1
+            self.coords[1] += dirR3*Strafer.speed
+
+
+        '''if self.coords[1] <= 0:
+            self.direction = 1
+        elif self.coords[1] >= scrn_h-Strafer.height:
+            self.direction = -1
+        self.coords[1] += self.direction*Strafer.speed'''
+
+class Strafer(Enemy):
+    sprite = pygame.image.load("assets/cargoShip.png")
+    bounty = 100
+    speed = 1
+    width = sprite.get_width()
+    height = sprite.get_height()
+
+    def __init__(self):
+        super().__init__()
+        self.coords, self.direction = self.positionChooser("Strafer")
+        self.hp = 1*Enemy.hpMulti
+
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+            Enemy.shipExplode.play()
+      
+    def update(self):
+        self.move()
+        screen.blit(Strafer.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(Strafer.sprite, self.coords)
+
+class BlueTurret(Enemy):
+    sprite = pygame.image.load("assets/blueTurret.png")                                                 #change this
+    bounty = 200
+    speed = 0.5
+    firerate = 300
+    width = sprite.get_width()
+    height = sprite.get_height()
+    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound.set_volume(0.08)#idk too loud
+
+    def __init__(self):
+        super().__init__()
+        self.coords, self.direction = self.positionChooser("BlueTurret")
+        self.cooldown = BlueTurret.firerate
+        self.hp = 3*Enemy.hpMulti
+
+    def shoot(self):
+        if self.cooldown <= 0:
+            BlueTurret.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(BlueTurret.height-EnemyBullet.height)/2]))
+            self.cooldown = BlueTurret.firerate
+    
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+                Enemy.shipExplode.play()
+    
+    def update(self):
+        self.cooldown -= 1
+        self.move()
+        self.shoot()
+        screen.blit(BlueTurret.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(BlueTurret.sprite, self.coords)
+
+class EnemyProjectile(Enemy):
+    def __init__(self, coords):
+        super().__init__()
+        self.coords = coords
+    
+    def collide(self, other):
+        if isinstance(other, Player):
+            self.dead = True
+
+class EnemyBullet(EnemyProjectile):
+    sprite = pygame.image.load("assets/EnemyBullet.png")
+    speed = 10
+    width = sprite.get_width()
+    height = sprite.get_height()
+
+    def __init__(self, coords):
+        super().__init__(coords)
+    
+    def move(self):
+        self.coords[0] -= EnemyBullet.speed
+        if self.coords[0] <= 0-EnemyBullet.width:
+            self.dead = True
+    
+    def update(self):
+        self.move()
+        screen.blit(EnemyBullet.sprite, self.coords)
+
+    def draw(self):
+        screen.blit(EnemyBullet.sprite, self.coords)
+
+class SuicideEnemy(Enemy):
+    sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
+    bounty = 250
+    speed = 10
+    width = sprite.get_width()
+    height = sprite.get_height()
+    prepTime = 500
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [random.randint(scrn_w/2, scrn_w*3/4), random.randint(100, scrn_h-100)]
+        self.time = SuicideEnemy.prepTime
+        self.hp = 0.5*Enemy.hpMulti
+    
+    def move(self):
+        if(self.time > 0):
+            self.angle = math.atan((self.coords[1]-player.coords[1])/(self.coords[0]-player.coords[0]))
+            self.coords[0] += SuicideEnemy.speed/100
+        else:
+            self.coords[0] -= math.cos(self.angle)*SuicideEnemy.speed
+            self.coords[1] -= math.sin(self.angle)*SuicideEnemy.speed
+            if self.coords[0] <= 0-SuicideEnemy.width:
+                self.dead = True
+
+    def collide(self, other):
+        if isinstance(other, Player):
+            self.hp = 0
+            self.dead = True
+            Enemy.shipExplode.play()
+        elif isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+
+    def update(self):
+        if self.time:
+            self.time -= 1
+        self.move()
+        screen.blit(SuicideEnemy.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(SuicideEnemy.sprite, self.coords)
+
+class Fleet(Enemy):
+    bounty = 250
+    speed = 1
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [scrn_w, random.randint(0, Fighter.height*5)]
+        self.fleetMembers = [
+            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]]),
+            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height]),
+            Fighter([self.coords[0], self.coords[1]+Fighter.height*2]),
+            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height*3]),
+            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]+Fighter.height*4])
+        ]
+        for member in self.fleetMembers:
+            member.speed = self.speed
+        self.memberCount = len(self.fleetMembers)
+        self.bountyMsg = my_font.render("Wipe out the insurgent convoy to claim a large bounty!", True, (255, 255, 255))
+    
+    def move(self):
+        self.coords[0] -= self.speed
+        if self.coords[0] + Fighter.width*3 < 0:
+            for member in self.fleetMembers:
+                self.fleetMembers.remove(member)
+            self.dead = True
+    
+    def update(self):
+        if len(self.fleetMembers) <= 0:
+            self.dead = True
+            if self.memberCount <= 0:
+                player.earn(Fleet.bounty)
+            return
+        screen.blit(self.bountyMsg, (screen.get_rect().centerx - self.bountyMsg.get_width()/2, self.bountyMsg.get_height()*2))
+        self.move()
+        for member in self.fleetMembers:
+            if member.dead:
+                self.fleetMembers.remove(member)
+                continue
+            member.update()
+
+    def draw(self):
+        if len(self.fleetMembers) <= 0:
+            self.dead = True
+            if self.memberCount <= 0:
+                player.earn(Fleet.bounty)
+            return
+    
+        for member in self.fleetMembers:
+            if member.dead:
+                self.fleetMembers.remove(member)
+                continue
+            member.draw()
+
+class Fighter(Enemy):
+    sprite = pygame.image.load("assets/convoyShip.png")
+    bounty = 20
+    speed = 1
+    width = sprite.get_width()
+    height = sprite.get_height()
+
+    def __init__(self, coords):
+        super().__init__()
+        self.hp = 1*Enemy.hpMulti
+        self.coords = coords
+
+    def move(self):
+        self.coords[0] -= self.speed
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+        elif isinstance(other, Player):
+            self.hp = 0
+            self.dead = True
+            Enemy.shipExplode.play()
+    
+    def update(self):
+        self.move()
+        screen.blit(Fighter.sprite, self.coords)
+    
+    def draw(self):
+        screen.blit(Fighter.sprite, self.coords)
+
+class Boss(Enemy):
+    bounty = 10000
+
+    def __init__(self):
+        super().__init__()
+        self.bounty *= stage.level/5
+
+    def collide(self, other):
+        if isinstance(other, PlayerProjectile):
+            self.hp -= other.damage
+            if self.hp <= 0:
+                self.dead = True
+                stage.bossDead = True
+
+class MegaShip(Boss):
+    sprite = pygame.image.load("assets/redBoss.png")                                                                         #change this
+    firerate = 100
+    suicide_firerate = 500
+    speed = 0.5
+    width = sprite.get_width()
+    height = sprite.get_height()
+    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound.set_volume(0.08)#idk too loud
+
+    def __init__(self):
+        super().__init__()
+        self.coords = [(scrn_w-MegaShip.width)*4/5, (scrn_h-MegaShip.height)/2]
+        self.hp = 20*Enemy.hpMulti
+        self.cooldown = MegaShip.firerate
+        self.suicideCooldown = MegaShip.suicide_firerate
+        self.direction = random.choice([-1,1])
+        self.bossBar = Bar(self.coords[0], self.coords[1], MegaShip.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
+
+    def move(self):
+        if self.coords[1] <= 0:
+            self.direction = 1
+        elif self.coords[1] >= scrn_h-MegaShip.height:
+            self.direction = -1
+        self.coords[1] += self.direction*MegaShip.speed
+
+    def shoot(self):
+        if self.cooldown <= 0:
+            MegaShip.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(MegaShip.height-MegaShip.height)/2]))
+            self.cooldown = MegaShip.firerate
+        if self.suicideCooldown <= 0:
+            stage.enemies.append(SuicideEnemy())
+            self.suicideCooldown = MegaShip.suicide_firerate
+    
+    def update(self):
+        self.cooldown -= 1
+        self.suicideCooldown -= 1
+        self.move()
+        self.shoot()
+        screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.update(self.hp)
+        self.bossBar.x = self.coords[0]
+        self.bossBar.y = self.coords[1]+MegaShip.sprite.get_height()+25
+        self.bossBar.display()
+    
+    def draw(self):
+        screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.display()
+
+class Bar():
+    def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
+        super().__init__()
+        self.value = 0
+        self.maxvalue = maxval
+        self.w = width
+        self.h = height
+        self.x = xpos
+        self.y = ypos
+        self.title = title
+        self.notch = notch
+        self.color = color
+
+    def display(self):
+        if stage.title.active:
+            return
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(self.x, self.y, self.w, self.h))
+        pygame.draw.rect(screen, self.color, pygame.Rect(self.x, self.y, (self.value/self.maxvalue)*self.w,self.h))
+        barText = my_font.render(self.title, True, (255, 255, 255))
+        screen.blit(barText, (self.x+self.w+15, self.y - 5))
+
+        if (self.notch):
+            for x in range(self.maxvalue):
+                pygame.draw.line(screen, (0, 0, 0), (self.x+(x*(self.w/self.maxvalue)), self.y), (self.x+(x*(self.w/self.maxvalue)), self.y+self.h))
+   
+    def update(self, val):
+        self.value = val
+
+# define a main function
+def main():
+    global screen, stage, player
+
+    coolDown = 0
+    activeWeapon = 0
+
+    paused = False
+
+    running = True
+    
+    frametime = pygame.time.Clock()
+
+    #pygame.display.set_icon(pygame.image.load("assets/logo.png"))                              reenable this
+    pygame.display.set_caption("Space Invaders")
+    screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
+
+    stage = Stage()
+     
+    player = Player()
+
+    ##########
+    health_bar = Bar(15, 10, 100, 35, "Health", maxval=player.hp, notch=True, color=(255, 0, 0))
+    shield_bar = Bar(15, 55, 100, 35, "Shield", maxval=player.shieldMax, notch=True, color=(30, 50, 255))   
+    cooldown_bar = Bar(250, 10, 100, 35, "Cooldown")
+    ##########
+
+    # death screen vars
+    death_font = pygame.font.SysFont('Comic Sans MS', 300)
+    death_text = death_font.render("Game Over!", False, (200, 0, 0))
+    score_text = my_font.render("Score: "+str(player.score), False, (255, 255, 255))
+    score_text.set_alpha(0)
+    deathLoc = -death_font.get_height()
+    deathVel = 1
+    deathAcc = 0.1
+    deathBounce = 0
+    # main loop
+    while running:
+        if stage.test:# put code for testing here
+            player.money += 100
+            if stage.level < 8:
+                stage.level = 8
+            pass
+
+        screen.fill((0,0,0)) #Clears the screen
+
+        if paused:
+            stage.paused()
+            player.paused()
+        else:
+            stage.update()
+            player.update(stage.shop.active)
+
+        health_bar.update(player.hp)
+        shield_bar.update(player.shield)
+
+        if player.getWeapon() == 0:
+            cooldown_bar.update(cooldown_bar.maxvalue-(player.bulletCD/player.bullet_firerate)*cooldown_bar.maxvalue)
+
+        elif player.getWeapon() == 1:
+            if player.laserTime > 0:
+                cooldown_bar.update(cooldown_bar.maxvalue-((player.laserTime)/player.laserDuration)*cooldown_bar.maxvalue)
+            else:
+                cooldown_bar.update(cooldown_bar.maxvalue-(player.laserCD/player.laser_firerate)*cooldown_bar.maxvalue)
+
+        elif player.getWeapon() == 2:
+            cooldown_bar.update(cooldown_bar.maxvalue-(player.bombCD/player.bomb_firerate)*cooldown_bar.maxvalue)
+
+
+        health_bar.display()
+        shield_bar.display()
+        cooldown_bar.display()
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEWHEEL:
+                player.switchWeapon(player.getWeapon()+event.y*-1)
+
+        keys = pygame.key.get_pressed()
+
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+
+        if player.hp <= 0:
+            paused = True
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            screen.blit(death_text, (screen.get_width()/2 - death_text.get_width()/2, deathLoc))
+
+            if deathBounce > 5:
+                screen.blit(score_text, (screen.get_width()/2 - score_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2))
+                score_text.set_alpha(min(254,score_text.get_alpha()+1))
+
+                exit_text = my_font.render("Press E to Return to Main Menu", False, (255, 255, 255))
+                screen.blit(exit_text, (screen.get_width()/2 - exit_text.get_width()/2, screen.get_height()/2 + death_text.get_height()/2 + score_text.get_height() + 30))
+
+                if keys[pygame.K_e]:
+                    stage = Stage()
+                    player = Player()
+                    paused = False
+
+            else:
+                score_text = my_font.render("Score: "+str(player.score), False, (255, 255, 255))
+                score_text.set_alpha(0)
+                deathLoc += deathVel
+                if deathLoc < screen.get_height()/2 - death_text.get_height()*3/5:
+                    deathVel += deathAcc
+                else:
+                    deathVel *= -0.5
+                    deathBounce += 1
+
+                if keys[pygame.K_RETURN]:
+                    return
+
+        elif not paused:
+            
+            if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.coords[1] - (Player.shieldHeight-Player.height)/2 > 0:
+                player.coords[1] -= player.speed
+            if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
+                player.coords[1] += player.speed
+
+            if keys[pygame.K_1]:
+                player.switchWeapon(0)
+            if keys[pygame.K_2]:
+                player.switchWeapon(1)
+
+            if keys[pygame.K_SPACE]:
+                player.shoot()
+            elif player.getWeapon() == 1 and player.laserTime != player.laserDuration and player.laserTime != 0:
+                    player.laserCD = math.floor(player.laser_firerate * max(0.5, player.laserTime / player.laserDuration))
+                    player.laserTime = 0
+                    Player.laserSound.fadeout(300)
+
+            if keys[pygame.K_ESCAPE]:
+                paused = True
+                
+            if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a] and not stage.test:
+                stage.test = True
+                print("=========TESTING=========")
+            
+            if keys[pygame.K_q] and stage.title.active:
+                running = False
+
+            enemyCore(stage.enemies)
+            playerBulletCore()
+            explosionCore(explosions)
+
+        else:
+            backdrop = pygame.Surface((screen.get_width(), screen.get_height()))
+            backdrop.set_alpha(120)
+            backdrop.fill((0, 0, 0))
+            screen.blit(backdrop, (0,0))
+
+            text = my_font.render('Press ENTER to Resume', False, (255, 255, 255))
+            subtext = my_font.render('Press E to Exit to Main Menu', False, (255, 255, 255))
+            screen.blit(text, (screen.get_width()/2 - text.get_width()/2, screen.get_height()/2))
+            screen.blit(subtext, (screen.get_width()/2 - subtext.get_width()/2, screen.get_height()/2 + text.get_height() + 15))
+
+            if keys[pygame.K_RETURN]:
+                paused = False
+            
+            if keys[pygame.K_e]:
+                stage = Stage()
+                player = Player()
+                paused = False
+            
+        
+        pygame.display.flip()
+        frametime.tick(120)
+
+def explosionCore(explosions):
+    
+    
+
+    if len(explosions) != 0:
+        for y in explosions:
+            explosionSprites = []
+            for sprite in rawExplosionSprites:
+                explosionSprites.append(pygame.transform.scale(sprite, (y[0]*1.5, y[0]*1.5)))
+            x = y[1]
+            if x[0] % 2 == 0:
+                h = explosionSprites[x[0]//2].get_height()
+                screen.blit(explosionSprites[x[0]//2], (x[1] + 50, x[2] - h/2))
+            x[0] += 1
+            if x[0] > 22:
+                explosions.remove(y)
+
+def playerBulletCore():
+    for x in player.bullets:
+        x.update()
+
+        if x.dead:
+            player.bullets.remove(x)
+            continue
+
+        for ship in stage.enemies:
+            if not isinstance(ship, EnemyProjectile) and not isinstance(ship, Fleet):
+                if ship.coords[0] <= x.coords[0] + x.width and ship.coords[0] + ship.width >= x.coords[0] and ship.coords[1] <= x.coords[1] + x.height and ship.coords[1] + ship.height >= x.coords[1]:          #detects bullet collision
+                    ship.collide(x)
+                    x.collide(ship)
+
+                    x_offset = random.randrange(-25, 25)
+                    y_offset = 0
+                    if ship.dead:
+                        player.earn(ship.bounty)
+                        stage.enemies.remove(ship)
+                        try:
+                            if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        except:
+                            explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                    else:
+                        explosions.append([50, [0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+
+                    
+
+
+                    
+                    
+                    if x.dead:
+                        try:
+                            player.bullets.remove(x)
+                        except ValueError:
+                            pass
+                    break
+            
+            elif isinstance(ship, Fleet):
+                for member in ship.fleetMembers:
+                    if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
+                        member.collide(x)
+                        x.collide(member)
+
+
+                        x_offset = random.randrange(-25, 25)
+                        y_offset = 0
+
+                        if member.dead:
+                            player.earn(member.bounty)
+                            ship.memberCount -= 1
+                            try:
+                                if ship.width > ship.height:
+                                    explosions.append([ship.width,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                                else:
+                                    explosions.append([ship.height,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                            except:
+                                explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+                        else:
+                            explosions.append([50,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
+
+                        
+
+
+                        
+                        
+                        if x.dead:
+                            try:
+                                player.bullets.remove(x)
+                            except ValueError:
+                                pass
+                        break
+
+def enemyCore(enemies):
+    global spawnRate
+    global spawnDelay
+    if stage.shop.active or stage.title.active:
+        return
+    numEnemies = 0
+    if spawnDelay == 0:
+        for x in enemies:
+            if not isinstance(x, EnemyProjectile):
+                numEnemies += 1
+        if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
+            #enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
+            #enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
+
+            enemySpawner(enemies)
+
+            stage.spawned += 1
+            spawnDelay = spawnRate
+
+    if spawnDelay != 0:
+        spawnDelay -= 1
+
+    for x in enemies:
+        if isinstance(x, Fleet):
+            for member in x.fleetMembers:
+                if member.coords[0] <= player.coords[0] + player.width and member.coords[0] + member.width >= player.coords[0] and member.coords[1] <= player.coords[1] + player.height and member.coords[1] + member.height >= player.coords[1]:
+                    player.collide(x)
+                    member.collide(player)
+            if x.dead:
+                enemies.remove(x)
+            else:
+                x.update()
+
+        else:
+            if x.coords[0] <= player.coords[0] + player.width and x.coords[0] + x.width >= player.coords[0] and x.coords[1] <= player.coords[1] + player.height and x.coords[1] + x.height >= player.coords[1]:
+                player.collide(x)
+                x.collide(player)
+            if x.dead:
+                enemies.remove(x)
+            else:
+                x.update()
+
+    #enemyMove(enemies)                                                                                     needs fixing
+
+def enemySpawner(enemies):
+    if stage.enemyProgression == 1:
+        enemies.append(Strafer())
+    elif stage.enemyProgression == 2:
+        rng = random.randint(0, 1)
+        if rng == 0:
+            enemies.append(Strafer())
+        else:
+            enemies.append(BlueTurret())
+    elif stage.enemyProgression == 3:
+        rng = random.randint(0,2)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        else:
+            enemies.append(Fleet())
+    elif stage.enemyProgression == 4:
+        rng = random.randint(0,3)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        elif rng == 2:
+            enemies.append(Fleet())
+        else:
+            enemies.append(SuicideEnemy())
+    else:
+        print("ERROR: Stage above 4")
+
+
+def renderHUD(coolDown, activeWeapon, fps):
+    if stage.title.active:
+        return
+    activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
+    if player.money < 10:
+        money = my_font.render("$0.0"+str(int(player.money)), True, (255, 255, 255))
+    elif player.money < 100:
+        money = my_font.render("$0."+str(int(player.money)), True, (255, 255, 255))
+    else:
+        money = my_font.render('$'+str(int(player.money))[:-2]+'.'+str(int(player.money))[-2:], True, (255, 255, 255))
+
+    frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
+    #screen.blit(CDtext, (10,0))
+    screen.blit(activeWeaponText, (15, 100))
+    screen.blit(frameRate, (1865, 0))
+    screen.blit(money, (600,0))
+
+def circ_rect_collide(circleCoords, radius, rect):
+    rectPoints = [
+        [rect.left, rect.top],
+        [rect.left+rect.width, rect.top],
+        [rect.left, rect.top+rect.height],
+        [rect.left+rect.width, rect.top+rect.height]
+    ]
+    for point in rectPoints:
+        if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
+            return True
+    return False
+
+     
+if __name__=="__main__":
+    # call the main function
+    main() 
