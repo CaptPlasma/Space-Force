@@ -96,7 +96,7 @@ class Shop():
     def __init__(self):
         self.active = False
         self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.05], [0, 0, 3]],
+            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3]],
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5], [0, 0]],
             "Upgrade Laser Cannon Speed": [1, 11, 500, [100], [0]],
             "Buy Laser Beam": [0, 1, 10000, [], []],
@@ -337,7 +337,7 @@ class Player(Entity):
 
     def earn(self, amt):
         self.money += amt*self.moneyMulti
-        self.score += amt
+        self.score += amt*self.moneyMulti
 
     def update(self):
         screen.blit(Player.playerSprite, self.coords)
@@ -426,6 +426,15 @@ class Laser(PlayerProjectile):
         else:
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
+class Bomb(PlayerProjectile):
+    sprite = pygame.image.load("assets/cargoShip.png")                                                   #change this
+    width = sprite.get_width()
+    height = sprite.get_height()
+    
+    def __init__(self, coords, speed, angle):
+        super().__init__(coords, speed, angle)
+        pass
+
 class Enemy(Entity):
     hpMulti = 1
     shipExplode = pygame.mixer.Sound("assets/explosion.wav")
@@ -435,7 +444,7 @@ class Enemy(Entity):
         super().__init__()
 
 class Strafer(Enemy):
-    sprite = pygame.image.load("assets/cargoShip.png")                                                   #change this
+    sprite = pygame.image.load("assets/cargoShip.png")
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -932,6 +941,8 @@ def playerBulletCore():
                             player.bullets.remove(x)
                         except ValueError:
                             pass
+                    break
+            
             elif isinstance(ship, Fleet):
                 for member in ship.fleetMembers:
                     if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
