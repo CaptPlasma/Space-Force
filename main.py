@@ -69,7 +69,7 @@ class Stage():
     def update(self):
         global titleActive
         screen.blit(self.background, (0,0))
-
+        
 
         if self.title.active:
             self.title.update()
@@ -102,6 +102,7 @@ class Shop():
             "Buy Laser Beam": [0, 1, 10000, [], []],
             "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
             "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
+            "Buy Bomb": [0, 1, 30000, [], []],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
         }
         self.itemKeys = [
@@ -111,6 +112,7 @@ class Shop():
             "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration",
+            "Buy Bomb",
             "Upgrade Shield Regen Speed"
         ]
         self.clickToggle = False
@@ -118,7 +120,9 @@ class Shop():
     def buy(self, item):
         if item in self.items:
             upgrade = self.items[item]
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam"]):
+            if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
+                return
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Bomb"][0] == 0):
                 upgrade[0] += 1
                 player.money -= int(upgrade[2])
                 for scale in range(len(upgrade[4])):
@@ -158,7 +162,7 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam"]):
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Bomb"][0] == 0):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
@@ -166,7 +170,7 @@ class Shop():
             pygame.draw.rect(screen, color, self.buttons[button])
             screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
             screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
-            if self.items[key][0] == 0 and key not in ["Buy Laser Beam"]:
+            if (self.items[key][0] == 0 and key not in ["Buy Laser Beam", "Buy Bomb"]) or (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
                 screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
             elif self.items[key][1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
@@ -276,7 +280,7 @@ class Player(Entity):
         self.bombDistance = 1450
         self.bombRadius = 200
         self.weapon = 0
-        self.unlockedWeapons = ["Laser Cannon", "Bomb"]
+        self.unlockedWeapons = ["Laser Cannon"]
         self.invTime = 0
         self.money=0
         self.moneyMulti = 1
@@ -357,11 +361,15 @@ class Player(Entity):
             screen.blit(Player.shieldSprite, [self.coords[0]-(Player.shieldWidth-Player.width)/2, self.coords[1]-(Player.shieldHeight-Player.height)/2])
         if self.bulletCD > 0 :
             self.bulletCD -= 1
-            if (self.bulletCD == 0):
+            if self.bulletCD == 0:
                 Player.reloadSound.play()
         if self.laserCD > 0:
             self.laserCD -= 1
-            if (self.laserCD == 0):
+            if self.laserCD == 0:
+                Player.reloadSound.play()
+        if self.bombCD > 0:
+            self.bombCD -= 1
+            if self.bombCD == 0:
                 Player.reloadSound.play()
         if self.invTime > 0:
             self.invTime -= 1
@@ -888,6 +896,9 @@ def main():
                 cooldown_bar.update(cooldown_bar.maxvalue-((player.laserTime)/player.laserDuration)*cooldown_bar.maxvalue)
             else:
                 cooldown_bar.update(cooldown_bar.maxvalue-(player.laserCD/player.laser_firerate)*cooldown_bar.maxvalue)
+
+        elif player.getWeapon() == 2:
+            cooldown_bar.update(cooldown_bar.maxvalue-(player.bombCD/player.bomb_firerate)*cooldown_bar.maxvalue)
 
 
         health_bar.display()
