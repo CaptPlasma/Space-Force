@@ -89,8 +89,8 @@ class Stage():
                 self.bossDead = False
                 self.advance()
         else:
-            for enemy in range(len(self.enemies)):
-                self.enemies[enemy].update()
+            for enemy in self.enemies:
+                enemy.update()
 
 class Shop():
     def __init__(self):
@@ -447,6 +447,7 @@ class Bomb(PlayerProjectile):
     width = sprite.get_width()
     height = sprite.get_height()
     bombExplosionSprites = explosionSprites.copy()
+    damage = 5
     
     def __init__(self, coords, bombDistance, radius, angle):
         super().__init__(coords, None, angle)
@@ -478,6 +479,27 @@ class Bomb(PlayerProjectile):
             screen.blit(self.sprite, self.coords)
             if self.timer == self.fuse:
                 self.explosions = [0, self.coords[0]+self.width/2-self.radius, self.coords[1]+self.height/2-self.radius]
+                for enemy in stage.enemies:
+                    if isinstance(enemy, Fleet):
+                        for member in enemy.fleetMembers:
+                            if circ_rect_collide(self.coords, self.radius, member.sprite.get_rect()):
+                                member.hp -= self.damage
+                                if member.hp <= 0:
+                                    member.dead = True
+                                    enemy.memberCount -= 1
+                                    player.earn(member.bounty)
+                                    enemy.fleetMembers.remove(member)
+                        if enemy.memberCount == 0:
+                            enemy.dead = True
+                            player.earn(enemy.bounty)
+                            stage.enemies.remove(enemy)
+                    elif not isinstance(enemy, EnemyProjectile):
+                        if circ_rect_collide(self.coords, self.radius, enemy.sprite.get_rect()):
+                            enemy.hp -= self.damage
+                            if enemy.hp <= 0:
+                                enemy.dead = True
+                                player.earn(enemy.bounty)
+                                stage.enemies.remove(enemy)
         elif self.timer > self.fuse+36:# add 12 / what is added to self.explosions[0] in self.explode()
             self.dead = True
         else:
@@ -1139,6 +1161,18 @@ def renderHUD(coolDown, activeWeapon, fps):
     screen.blit(activeWeaponText, (15, 90))
     screen.blit(frameRate, (1865, 0))
     screen.blit(money, (600,0))
+
+def circ_rect_collide(circleCoords, radius, rect):
+    rectPoints = [
+        [rect.left, rect.top],
+        [rect.left+rect.width, rect.top],
+        [rect.left, rect.top+rect.height],
+        [rect.left+rect.width, rect.top+rect.height]
+    ]
+    for point in rectPoints:
+        if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
+            return True
+    return False
 
      
 if __name__=="__main__":
