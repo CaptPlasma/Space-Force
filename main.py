@@ -133,7 +133,7 @@ class Shop():
             upgrade = self.items[item]
             if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
                 return
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Bomb"][0] == 0):
+            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
                 upgrade[0] += 1
                 player.money -= int(upgrade[2])
                 for scale in range(len(upgrade[4])):
@@ -160,6 +160,8 @@ class Shop():
                     Laser.damage += 0.01
                 elif item == "Upgrade Laser Beam Duration":
                     player.laserDuration += 50
+                elif item == "Buy Bomb":
+                    player.unlockedWeapons.append("Bomb")
                 elif item == "Upgrade Shield Regen Speed":
                     player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
@@ -173,7 +175,7 @@ class Shop():
         self.buttons = []
         button = 0
         for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Bomb"][0] == 0):
+            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
                 color = (0, 255, 0)
             else:
                 color = (220, 220, 220)
