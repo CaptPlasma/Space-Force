@@ -461,7 +461,7 @@ class Enemy(Entity):
         iteration = 0
         while True:
             overlap = False
-            POS = [random.choice([1200, 1450, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            POS = [random.choice([950, 1200, 1450, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
             if iteration > 100: #If overcrowded ignore overlaping
                 print("ERROR: Overcrowding")
                 break
