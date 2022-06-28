@@ -495,8 +495,7 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Bomb(PlayerProjectile):
-    sprite = pygame.image.load("assets/cargoShip.png")                                                      #change this
-    redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
+    sprite = pygame.image.load("assets/bomb.png")                                                      #change this
     width = sprite.get_width()
     height = sprite.get_height()
     bombExplosionSprites = rawExplosionSprites.copy()
