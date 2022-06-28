@@ -95,7 +95,6 @@ class Stage():
             self.stageEnd -= 1
             screen.blit(self.changeText, self.changeText.get_rect(center = screen.get_rect().center))
         elif len(self.enemies) == 0 and self.spawned >= self.toSpawn:
-            print(self.level)
             if self.level%5 == 0:
                 if self.bossDead:
                     self.advance()
@@ -837,7 +836,7 @@ class Fleet(Enemy):
             if member.dead:
                 self.fleetMembers.remove(member)
                 continue
-            member.update()
+            member.draw()
 
 class Fighter(Enemy):
     sprite = pygame.image.load("assets/convoyShip.png")
@@ -1029,6 +1028,7 @@ def main():
         health_bar.display()
         shield_bar.display()
         cooldown_bar.display()
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1133,7 +1133,6 @@ def explosionCore(explosions):
     
 
     if len(explosions) != 0:
-        print(explosions, explosions[0][1])
         for y in explosions:
             explosionSprites = []
             for sprite in rawExplosionSprites:
@@ -1302,11 +1301,11 @@ def renderHUD(coolDown, activeWeapon, fps):
         return
     activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
     if player.money < 10:
-        money = my_font.render("$0.0"+str(player.money), True, (255, 255, 255))
+        money = my_font.render("$0.0"+str(int(player.money)), True, (255, 255, 255))
     elif player.money < 100:
-        money = my_font.render("$0."+str(player.money), True, (255, 255, 255))
+        money = my_font.render("$0."+str(int(player.money)), True, (255, 255, 255))
     else:
-        money = my_font.render('$'+str(player.money)[:-2]+'.'+str(player.money)[-2:], True, (255, 255, 255))
+        money = my_font.render('$'+str(int(player.money))[:-2]+'.'+str(int(player.money))[-2:], True, (255, 255, 255))
 
     frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
     #screen.blit(CDtext, (10,0))
