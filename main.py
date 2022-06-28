@@ -629,6 +629,19 @@ class Fleet(Enemy):
                 continue
             member.update()
 
+    def draw(self):
+        if len(self.fleetMembers) <= 0:
+            self.dead = True
+            if self.memberCount <= 0:
+                player.earn(Fleet.bounty)
+            return
+    
+        for member in self.fleetMembers:
+            if member.dead:
+                self.fleetMembers.remove(member)
+                continue
+            member.update()
+
 class Fighter(Enemy):
     sprite = pygame.image.load("assets/Ship.png")
     bounty = 100
@@ -656,6 +669,9 @@ class Fighter(Enemy):
     
     def update(self):
         self.move()
+        screen.blit(Fighter.sprite, self.coords)
+    
+    def draw(self):
         screen.blit(Fighter.sprite, self.coords)
 
 class Boss(Enemy):
@@ -841,6 +857,11 @@ def main():
             if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_RIGHT] and keys[pygame.K_LEFT] and keys[pygame.K_b] and keys[pygame.K_a] and not stage.test:
                 stage.test = True
                 print("=========TESTING=========")
+            if keys[pygame.K_h]:
+                #stage.title.active = True
+                stage = Stage()
+                player = Player()
+
 
             enemyCore(stage.enemies)
             playerBulletCore()
