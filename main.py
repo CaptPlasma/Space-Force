@@ -927,6 +927,7 @@ class MegaShip(Boss):
         self.cooldown = MegaShip.firerate
         self.suicideCooldown = MegaShip.suicide_firerate
         self.direction = random.choice([-1,1])
+        self.bossBar = Bar(self.coords[0], self.coords[1], MegaShip.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
 
     def move(self):
         if self.coords[1] <= 0:
@@ -950,9 +951,16 @@ class MegaShip(Boss):
         self.move()
         self.shoot()
         screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.update(self.hp)
+        self.bossBar.x = self.coords[0]
+        self.bossBar.y = self.coords[1]+MegaShip.sprite.get_height()+25
+        self.bossBar.display()
     
     def draw(self):
         screen.blit(MegaShip.sprite, self.coords)
+
+        self.bossBar.display()
 
 class Bar():
     def __init__(self, xpos, ypos, width, height, title, maxval=10, notch=False, color=(0,255,0)):
