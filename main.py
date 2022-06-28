@@ -155,7 +155,7 @@ class Shop():
                     else:
                         break
                 if item == "Upgrade Laser Cannon Damage":
-                    Bullet.damage += 0.25
+                    Bullet.damage += min(0.25, Bullet.damage**-0.9)
                 elif item == "Upgrade Laser Cannon Cooldown":
                     player.bullet_firerate -= 10
                 elif item == "Upgrade Laser Cannon Speed":
@@ -362,7 +362,7 @@ class Player(Entity):
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
-            self.invTime = 50
+            self.invTime = 20
             if self.shield:
                 self.shield -= 1
                 x_offset = random.randrange(-25, 25)
