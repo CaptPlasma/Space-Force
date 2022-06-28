@@ -267,8 +267,12 @@ class Player(Entity):
         self.laser_firerate = 1000
         self.laserTime = 0
         self.laserDuration = 300
+        self.bombCD = 0
+        self.bomb_firerate = 1500
         self.bullets = []
-        self.bulletSpeed = 20
+        self.bombs = []
+        self.bulletDistance = scrn_w*3/4
+        self.bombRow = 4
         self.weapon = 0
         self.unlockedWeapons = ["Laser Cannon"]
         self.invTime = 0
@@ -301,6 +305,11 @@ class Player(Entity):
                 self.laserCD = self.laser_firerate
                 self.laserTime = 0
                 Player.laserSound.fadeout(300)
+        elif self.unlockedWeapons[self.weapon] == "Bomb":
+            if self.bombCD <= 0:
+                self.bombs.append(Bomb(self.coords.copy(), self.bombSpeed, 0))
+                self.bombCD = self.bomb_firerate
+                Player.bulletSound.play()
 
     def collide(self, other):
         if isinstance(other, Enemy) and not self.invTime:
@@ -427,13 +436,30 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Bomb(PlayerProjectile):
-    sprite = pygame.image.load("assets/cargoShip.png")                                                   #change this
+    sprite = pygame.image.load("assets/cargoShip.png")                                                      #change this
+    redSprite = pygame.image.load("assets/redBoss.png")                                                     #change this
     width = sprite.get_width()
     height = sprite.get_height()
     
-    def __init__(self, coords, speed, angle):
-        super().__init__(coords, speed, angle)
-        pass
+    def __init__(self, coords, bombDistance, angle):
+        super().__init__(coords, None, angle)
+        self.fuse = 300
+        self.timer = 0
+        self.speed = bombDistance/100
+
+    def move(self):
+        self.coords[0] += self.speed
+        if self.speed > 0:
+            self.coords[0] += math.cos(self.angle)*self.speed
+            self.coords[1] += math.sin(self.angle)*self.speed
+            self.speed -= 0.1
+        elif self.speed != 0:
+            self.speed = 0
+
+    def update(self):
+        self.timer += 1
+        self.move()
+        screen.blit(self.sprite, self.coords)
 
 class Enemy(Entity):
     hpMulti = 1
