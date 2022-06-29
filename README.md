@@ -1,6 +1,6 @@
 # Space Force
 
-Space Invaders and Gradius knock-off created in [Pygame](https://www.pygame.org/wiki/about) using [Python](https://www.python.org/).
+Space Invaders and Gradius inspired arcade shooter written in [Python](https://www.python.org/) using [Pygame](https://www.pygame.org/wiki/about).
 
 ![Example](./assets/example.png)
 
