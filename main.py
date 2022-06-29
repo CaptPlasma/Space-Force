@@ -1,3 +1,4 @@
+from asyncio import constants
 import pygame, random, math, json
  
 pygame.init()
@@ -24,6 +25,19 @@ dirR0 = random.choice([1, -1])
 dirR1 = random.choice([1, -1])
 dirR2 = random.choice([1, -1])
 dirR3 = random.choice([1, -1])
+
+pygameNumKeys = [
+    pygame.K_1,
+    pygame.K_2,
+    pygame.K_3,
+    pygame.K_4,
+    pygame.K_5,
+    pygame.K_6,
+    pygame.K_7,
+    pygame.K_8,
+    pygame.K_9,
+    pygame.K_0
+]
 
 for x in range(12):
     rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
@@ -1114,10 +1128,9 @@ def main():
             if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.coords[1] + (Player.shieldHeight-Player.height/2) < scrn_h:
                 player.coords[1] += player.speed
 
-            if keys[pygame.K_1]:
-                player.switchWeapon(0)
-            if keys[pygame.K_2]:
-                player.switchWeapon(1)
+            for num in range(len(pygameNumKeys)):
+                if keys[pygameNumKeys[num]]:
+                    player.switchWeapon(num)
 
             if keys[pygame.K_SPACE]:
                 player.shoot()
