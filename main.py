@@ -26,7 +26,7 @@ dirR1 = random.choice([1, -1])
 dirR2 = random.choice([1, -1])
 dirR3 = random.choice([1, -1])
 
-pygameNumKeys = [ # get number keys as index
+pygameNumKeys = [
     pygame.K_1,
     pygame.K_2,
     pygame.K_3,
@@ -49,7 +49,7 @@ class Stage():
         self.toSpawn = 10
         self.spawned = 0
         self.stageEnd = 300
-        self.enemyProgression = 0
+        self.enemyProgression = 1
         self.level = 1
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
@@ -246,6 +246,7 @@ class Shop():
         self.detectClick()
         self.display()
 
+
 class Title():
     def __init__(self):
         self.active = True
@@ -277,6 +278,9 @@ class Title():
         if keys[pygame.K_RETURN]:
             self.active = False
         self.display()
+
+
+
 
 class Entity():
     def __init__(self):
@@ -999,8 +1003,12 @@ class Bar():
     def update(self, val):
         self.value = val
 
+# define a main function
 def main():
     global screen, stage, player
+
+    coolDown = 0
+    activeWeapon = 0
 
     paused = False
 
@@ -1067,7 +1075,7 @@ def main():
         health_bar.display()
         shield_bar.display()
         cooldown_bar.display()
-        renderHUD(frametime.get_fps())
+        renderHUD(coolDown, activeWeapon, frametime.get_fps())
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1169,6 +1177,9 @@ def main():
         frametime.tick(120)
 
 def explosionCore(explosions):
+    
+    
+
     if len(explosions) != 0:
         for y in explosions:
             explosionSprites = []
@@ -1269,6 +1280,8 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
+            #enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
+            #enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
 
             enemySpawner(enemies)
 
@@ -1298,20 +1311,40 @@ def enemyCore(enemies):
             else:
                 x.update()
 
-def enemySpawner(enemies):
-    rng = random.randint(0, stage.enemyProgression)
-    if rng == 0:
-        enemies.append(Strafer())
-    elif rng == 1:
-        enemies.append(BlueTurret())
-    elif rng == 2:
-        enemies.append(Fleet())
-    elif rng == 3:
-        enemies.append(SuicideEnemy())
-    else:
-        print("ERROR: enemy progression above max")
+    #enemyMove(enemies)                                                                                     needs fixing
 
-def renderHUD(fps):
+def enemySpawner(enemies):
+    if stage.enemyProgression == 1:
+        enemies.append(Strafer())
+    elif stage.enemyProgression == 2:
+        rng = random.randint(0, 1)
+        if rng == 0:
+            enemies.append(Strafer())
+        else:
+            enemies.append(BlueTurret())
+    elif stage.enemyProgression == 3:
+        rng = random.randint(0,2)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        else:
+            enemies.append(Fleet())
+    elif stage.enemyProgression == 4:
+        rng = random.randint(0,3)
+        if rng == 0:
+            enemies.append(Strafer())
+        elif rng == 1:
+            enemies.append(BlueTurret())
+        elif rng == 2:
+            enemies.append(Fleet())
+        else:
+            enemies.append(SuicideEnemy())
+    else:
+        print("ERROR: Stage above 4")
+
+
+def renderHUD(coolDown, activeWeapon, fps):
     if stage.title.active:
         return
     activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
@@ -1339,7 +1372,8 @@ def circ_rect_collide(circleCoords, radius, rect):
         if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
             return True
     return False
-   
+
+     
 if __name__=="__main__":
     # call the main function
     main() 
