@@ -86,7 +86,7 @@ class Stage():
             self.enemyProgression = 2
 
     def spawnBoss(self):
-        bossTypes = [MegaShip()]
+        bossTypes = [InsurgentCarrier()]
         self.enemies.append(random.choice(bossTypes.copy()))
 
     def paused(self):
@@ -282,8 +282,8 @@ class Entity():
         self.dead = False
 
 class Player(Entity):
-    playerSprite = pygame.image.load("assets/sprites/Ship.png")
-    shieldSprite = pygame.image.load("assets/sprites/Shield.png")
+    playerSprite = pygame.image.load("assets/sprites/player.png")
+    shieldSprite = pygame.image.load("assets/sprites/shield.png")
     width = playerSprite.get_width()
     height = playerSprite.get_height()
     shieldWidth = shieldSprite.get_width()
@@ -471,7 +471,7 @@ class PlayerProjectile(Entity):
             self.dead = True
 
 class Bullet(PlayerProjectile):
-    sprite = pygame.image.load("assets/sprites/playerBullet.png")
+    sprite = pygame.image.load("assets/sprites/player_bullet.png")
     width = sprite.get_width()
     height = sprite.get_height()
     damage = 1
@@ -585,24 +585,24 @@ class Enemy(Entity):
     hpMulti = 1
     shipExplode = pygame.mixer.Sound("assets/audio/explosion.wav")
     shipExplode.set_volume(0.5)
-    spawnMargin = 25 #Closest 2 ships can spawn (Only affects Strafers and Blue turrets)
+    spawnMargin = 25 #Closest 2 ships can spawn (Only affects CargoShips and Blue turrets)
     def __init__(self):
         super().__init__()
 
     def positionChooser(self, type):
         global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
 
-        if type == "Strafer":
-            self.w = Strafer.width
-            self.h = Strafer.height
-        elif type == "BlueTurret":
-            self.w = BlueTurret.width
-            self.h = BlueTurret.height
+        if type == "CargoShip":
+            self.w = CargoShip.width
+            self.h = CargoShip.height
+        elif type == "Fighter":
+            self.w = Fighter.width
+            self.h = Fighter.height
 
         iteration = 0
         while True:
             overlap = False
-            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-CargoShip.height*5, scrn_h/2+CargoShip.height*4)]
             if iteration > 100: #If overcrowded ignore overlaping
                 break
             if POS[0] == 950 and len(enemiesR0) > 0:
@@ -648,28 +648,28 @@ class Enemy(Entity):
                 dirR0 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR0 = -1
-            self.coords[1] += dirR0*Strafer.speed
+            self.coords[1] += dirR0*CargoShip.speed
         elif self in enemiesR1:
             if self.coords[1] <= 0:
                 dirR1 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR1 = -1
-            self.coords[1] += dirR1*Strafer.speed
+            self.coords[1] += dirR1*CargoShip.speed
         elif self in enemiesR2:
             if self.coords[1] <= 0:
                 dirR2 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR2 = -1
-            self.coords[1] += dirR2*Strafer.speed
+            self.coords[1] += dirR2*CargoShip.speed
         else:
             if self.coords[1] <= 0:
                 dirR3 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR3 = -1
-            self.coords[1] += dirR3*Strafer.speed
+            self.coords[1] += dirR3*CargoShip.speed
 
-class Strafer(Enemy):
-    sprite = pygame.image.load("assets/sprites/cargoShip.png")
+class CargoShip(Enemy):
+    sprite = pygame.image.load("assets/sprites/cargo_ship.png")
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -677,7 +677,7 @@ class Strafer(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords, self.direction = self.positionChooser("Strafer")
+        self.coords, self.direction = self.positionChooser("CargoShip")
         self.hp = 1*Enemy.hpMulti
 
 
@@ -690,13 +690,13 @@ class Strafer(Enemy):
       
     def update(self):
         self.move()
-        screen.blit(Strafer.sprite, self.coords)
+        screen.blit(CargoShip.sprite, self.coords)
     
     def draw(self):
-        screen.blit(Strafer.sprite, self.coords)
+        screen.blit(CargoShip.sprite, self.coords)
 
-class BlueTurret(Enemy):
-    sprite = pygame.image.load("assets/sprites/blueTurret.png")                                                 #change this
+class Fighter(Enemy):
+    sprite = pygame.image.load("assets/sprites/insurgent_fighter.png")
     bounty = 200
     speed = 0.5
     firerate = 300
@@ -707,15 +707,15 @@ class BlueTurret(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords, self.direction = self.positionChooser("BlueTurret")
-        self.cooldown = BlueTurret.firerate
+        self.coords, self.direction = self.positionChooser("Fighter")
+        self.cooldown = Fighter.firerate
         self.hp = 3*Enemy.hpMulti
 
     def shoot(self):
         if self.cooldown <= 0:
-            BlueTurret.bulletSound.play()
-            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(BlueTurret.height-EnemyBullet.height)/2]))
-            self.cooldown = BlueTurret.firerate
+            Fighter.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(Fighter.height-EnemyBullet.height)/2]))
+            self.cooldown = Fighter.firerate
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
@@ -728,10 +728,10 @@ class BlueTurret(Enemy):
         self.cooldown -= 1
         self.move()
         self.shoot()
-        screen.blit(BlueTurret.sprite, self.coords)
+        screen.blit(Fighter.sprite, self.coords)
     
     def draw(self):
-        screen.blit(BlueTurret.sprite, self.coords)
+        screen.blit(Fighter.sprite, self.coords)
 
 class EnemyProjectile(Enemy):
     def __init__(self, coords):
@@ -763,8 +763,8 @@ class EnemyBullet(EnemyProjectile):
     def draw(self):
         screen.blit(EnemyBullet.sprite, self.coords)
 
-class SuicideEnemy(Enemy):
-    sprite = pygame.transform.scale(pygame.image.load("assets/sprites/EnemySuicide.png"), (50, 50))
+class KamikazeSpacecraft(Enemy):
+    sprite = pygame.transform.scale(pygame.image.load("assets/sprites/kamikaze_spacecraft.png"), (50, 50))
     bounty = 250
     speed = 10
     width = sprite.get_width()
@@ -774,17 +774,17 @@ class SuicideEnemy(Enemy):
     def __init__(self):
         super().__init__()
         self.coords = [random.randint(scrn_w/2, scrn_w*3/4), random.randint(100, scrn_h-100)]
-        self.time = SuicideEnemy.prepTime
+        self.time = KamikazeSpacecraft.prepTime
         self.hp = 0.5*Enemy.hpMulti
     
     def move(self):
         if(self.time > 0):
             self.angle = math.atan((self.coords[1]-player.coords[1])/(self.coords[0]-player.coords[0]))
-            self.coords[0] += SuicideEnemy.speed/100
+            self.coords[0] += KamikazeSpacecraft.speed/100
         else:
-            self.coords[0] -= math.cos(self.angle)*SuicideEnemy.speed
-            self.coords[1] -= math.sin(self.angle)*SuicideEnemy.speed
-            if self.coords[0] <= 0-SuicideEnemy.width:
+            self.coords[0] -= math.cos(self.angle)*KamikazeSpacecraft.speed
+            self.coords[1] -= math.sin(self.angle)*KamikazeSpacecraft.speed
+            if self.coords[0] <= 0-KamikazeSpacecraft.width:
                 self.dead = True
 
     def collide(self, other):
@@ -801,10 +801,10 @@ class SuicideEnemy(Enemy):
         if self.time:
             self.time -= 1
         self.move()
-        screen.blit(SuicideEnemy.sprite, self.coords)
+        screen.blit(KamikazeSpacecraft.sprite, self.coords)
     
     def draw(self):
-        screen.blit(SuicideEnemy.sprite, self.coords)
+        screen.blit(KamikazeSpacecraft.sprite, self.coords)
 
 class Fleet(Enemy):
     bounty = 250
@@ -812,13 +812,13 @@ class Fleet(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords = [scrn_w, random.randint(0, Fighter.height*5)]
+        self.coords = [scrn_w, random.randint(0, ConvoyShip.height*5)]
         self.fleetMembers = [
-            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]]),
-            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height]),
-            Fighter([self.coords[0], self.coords[1]+Fighter.height*2]),
-            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height*3]),
-            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]+Fighter.height*4])
+            ConvoyShip([self.coords[0]+ConvoyShip.width*2, self.coords[1]]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width, self.coords[1]+ConvoyShip.height]),
+            ConvoyShip([self.coords[0], self.coords[1]+ConvoyShip.height*2]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width, self.coords[1]+ConvoyShip.height*3]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width*2, self.coords[1]+ConvoyShip.height*4])
         ]
         for member in self.fleetMembers:
             member.speed = self.speed
@@ -827,7 +827,7 @@ class Fleet(Enemy):
     
     def move(self):
         self.coords[0] -= self.speed
-        if self.coords[0] + Fighter.width*3 < 0:
+        if self.coords[0] + ConvoyShip.width*3 < 0:
             for member in self.fleetMembers:
                 self.fleetMembers.remove(member)
             self.dead = True
@@ -859,8 +859,8 @@ class Fleet(Enemy):
                 continue
             member.draw()
 
-class Fighter(Enemy):
-    sprite = pygame.image.load("assets/sprites/convoyShip.png")
+class ConvoyShip(Enemy):
+    sprite = pygame.image.load("assets/sprites/convoy_ship.png")
     bounty = 20
     speed = 1
     width = sprite.get_width()
@@ -886,10 +886,10 @@ class Fighter(Enemy):
     
     def update(self):
         self.move()
-        screen.blit(Fighter.sprite, self.coords)
+        screen.blit(ConvoyShip.sprite, self.coords)
     
     def draw(self):
-        screen.blit(Fighter.sprite, self.coords)
+        screen.blit(ConvoyShip.sprite, self.coords)
 
 class Boss(Enemy):
     bounty = 10000
@@ -905,8 +905,8 @@ class Boss(Enemy):
                 self.dead = True
                 stage.bossDead = True
 
-class MegaShip(Boss):
-    sprite = pygame.image.load("assets/sprites/redBoss.png")                                                                         #change this
+class InsurgentCarrier(Boss):
+    sprite = pygame.image.load("assets/sprites/insurgent_carrier.png")                                                                         #change this
     firerate = 100
     suicide_firerate = 500
     speed = 0.5
@@ -917,43 +917,43 @@ class MegaShip(Boss):
 
     def __init__(self):
         super().__init__()
-        self.coords = [(scrn_w-MegaShip.width)*4/5, (scrn_h-MegaShip.height)/2]
+        self.coords = [(scrn_w-InsurgentCarrier.width)*4/5, (scrn_h-InsurgentCarrier.height)/2]
         self.hp = 20*Enemy.hpMulti
-        self.cooldown = MegaShip.firerate
-        self.suicideCooldown = MegaShip.suicide_firerate
+        self.cooldown = InsurgentCarrier.firerate
+        self.suicideCooldown = InsurgentCarrier.suicide_firerate
         self.direction = random.choice([-1,1])
-        self.bossBar = Bar(self.coords[0], self.coords[1], MegaShip.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
+        self.bossBar = Bar(self.coords[0], self.coords[1], InsurgentCarrier.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
 
     def move(self):
         if self.coords[1] <= 0:
             self.direction = 1
-        elif self.coords[1] >= scrn_h-MegaShip.height:
+        elif self.coords[1] >= scrn_h-InsurgentCarrier.height:
             self.direction = -1
-        self.coords[1] += self.direction*MegaShip.speed
+        self.coords[1] += self.direction*InsurgentCarrier.speed
 
     def shoot(self):
         if self.cooldown <= 0:
-            MegaShip.bulletSound.play()
-            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(MegaShip.height-MegaShip.height)/2]))
-            self.cooldown = MegaShip.firerate
+            InsurgentCarrier.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(InsurgentCarrier.height-InsurgentCarrier.height)/2]))
+            self.cooldown = InsurgentCarrier.firerate
         if self.suicideCooldown <= 0:
-            stage.enemies.append(SuicideEnemy())
-            self.suicideCooldown = MegaShip.suicide_firerate
+            stage.enemies.append(KamikazeSpacecraft())
+            self.suicideCooldown = InsurgentCarrier.suicide_firerate
     
     def update(self):
         self.cooldown -= 1
         self.suicideCooldown -= 1
         self.move()
         self.shoot()
-        screen.blit(MegaShip.sprite, self.coords)
+        screen.blit(InsurgentCarrier.sprite, self.coords)
 
         self.bossBar.update(self.hp)
         self.bossBar.x = self.coords[0]
-        self.bossBar.y = self.coords[1]+MegaShip.sprite.get_height()+25
+        self.bossBar.y = self.coords[1]+InsurgentCarrier.sprite.get_height()+25
         self.bossBar.display()
     
     def draw(self):
-        screen.blit(MegaShip.sprite, self.coords)
+        screen.blit(InsurgentCarrier.sprite, self.coords)
 
         self.bossBar.display()
 
@@ -1274,13 +1274,13 @@ def enemyCore(enemies):
 def enemySpawner(enemies):
     rng = random.randint(0, stage.enemyProgression)
     if rng == 0:
-        enemies.append(Strafer())
+        enemies.append(CargoShip())
     elif rng == 1:
-        enemies.append(BlueTurret())
+        enemies.append(Fighter())
     elif rng == 2:
         enemies.append(Fleet())
     elif rng == 3:
-        enemies.append(SuicideEnemy())
+        enemies.append(KamikazeSpacecraft())
     else:
         print("ERROR: no enemy at enemy progression stage ", rng)
 
