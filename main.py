@@ -13,9 +13,6 @@ my_font = pygame.font.SysFont('Comic Sans MS', 30)
 spawnRate = 60     #interval before enemies spawn
 spawnDelay = 0    #Initial delay before spawning
 
-explosions = []
-rawExplosionSprites = []
-
 enemiesR0 = []
 enemiesR1 = []
 enemiesR2 = []
@@ -39,6 +36,8 @@ pygameNumKeys = [
     pygame.K_0
 ]
 
+explosions = []
+rawExplosionSprites = []
 for x in range(12):
     rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
 
@@ -49,7 +48,7 @@ class Stage():
         self.toSpawn = 10
         self.spawned = 0
         self.stageEnd = 300
-        self.enemyProgression = 1
+        self.enemyProgression = 0
         self.level = 1
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
@@ -246,7 +245,6 @@ class Shop():
         self.detectClick()
         self.display()
 
-
 class Title():
     def __init__(self):
         self.active = True
@@ -278,9 +276,6 @@ class Title():
         if keys[pygame.K_RETURN]:
             self.active = False
         self.display()
-
-
-
 
 class Entity():
     def __init__(self):
@@ -1003,12 +998,8 @@ class Bar():
     def update(self, val):
         self.value = val
 
-# define a main function
 def main():
     global screen, stage, player
-
-    coolDown = 0
-    activeWeapon = 0
 
     paused = False
 
@@ -1075,7 +1066,7 @@ def main():
         health_bar.display()
         shield_bar.display()
         cooldown_bar.display()
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+        renderHUD(frametime.get_fps())
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1084,8 +1075,6 @@ def main():
                 player.switchWeapon(player.getWeapon()+event.y*-1)
 
         keys = pygame.key.get_pressed()
-
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
 
         if player.hp <= 0:
             paused = True
@@ -1177,9 +1166,6 @@ def main():
         frametime.tick(120)
 
 def explosionCore(explosions):
-    
-    
-
     if len(explosions) != 0:
         for y in explosions:
             explosionSprites = []
@@ -1280,8 +1266,6 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
-            #enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
-            #enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
 
             enemySpawner(enemies)
 
@@ -1311,40 +1295,20 @@ def enemyCore(enemies):
             else:
                 x.update()
 
-    #enemyMove(enemies)                                                                                     needs fixing
-
 def enemySpawner(enemies):
-    if stage.enemyProgression == 1:
+    rng = random.randint(0, stage.enemyProgression)
+    if rng == 0:
         enemies.append(Strafer())
-    elif stage.enemyProgression == 2:
-        rng = random.randint(0, 1)
-        if rng == 0:
-            enemies.append(Strafer())
-        else:
-            enemies.append(BlueTurret())
-    elif stage.enemyProgression == 3:
-        rng = random.randint(0,2)
-        if rng == 0:
-            enemies.append(Strafer())
-        elif rng == 1:
-            enemies.append(BlueTurret())
-        else:
-            enemies.append(Fleet())
-    elif stage.enemyProgression == 4:
-        rng = random.randint(0,3)
-        if rng == 0:
-            enemies.append(Strafer())
-        elif rng == 1:
-            enemies.append(BlueTurret())
-        elif rng == 2:
-            enemies.append(Fleet())
-        else:
-            enemies.append(SuicideEnemy())
+    elif rng == 1:
+        enemies.append(BlueTurret())
+    elif rng == 2:
+        enemies.append(Fleet())
+    elif rng == 3:
+        enemies.append(SuicideEnemy())
     else:
-        print("ERROR: Stage above 4")
+        print("ERROR: no enemy at enemy progression stage ", rng)
 
-
-def renderHUD(coolDown, activeWeapon, fps):
+def renderHUD(fps):
     if stage.title.active:
         return
     activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
@@ -1356,7 +1320,6 @@ def renderHUD(coolDown, activeWeapon, fps):
         money = my_font.render('$'+str(int(player.money))[:-2]+'.'+str(int(player.money))[-2:], True, (255, 255, 255))
 
     frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
-    #screen.blit(CDtext, (10,0))
     screen.blit(activeWeaponText, (15, 100))
     screen.blit(frameRate, (1865, 0))
     screen.blit(money, (600,0))
@@ -1372,7 +1335,6 @@ def circ_rect_collide(circleCoords, radius, rect):
         if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
             return True
     return False
-
      
 if __name__=="__main__":
     # call the main function
