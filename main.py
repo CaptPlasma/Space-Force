@@ -39,11 +39,11 @@ pygameNumKeys = [
 explosions = []
 rawExplosionSprites = []
 for x in range(12):
-    rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
+    rawExplosionSprites.append(pygame.image.load("assets/sprites/explosion"+str(x)+".png"))
 
 class Stage():
     def __init__(self):
-        self.background = pygame.image.load("assets/background.png")
+        self.background = pygame.image.load("assets/sprites/background.png")
         self.enemyCap = 10
         self.toSpawn = 10
         self.spawned = 0
@@ -58,7 +58,7 @@ class Stage():
         self.title = Title()
 
         #music
-        pygame.mixer.music.load("assets/background.wav")#
+        pygame.mixer.music.load("assets/audio/background.wav")#
         pygame.mixer.music.set_volume(0.1)#
         pygame.mixer.music.play(-1)# 
     
@@ -282,30 +282,30 @@ class Entity():
         self.dead = False
 
 class Player(Entity):
-    playerSprite = pygame.image.load("assets/Ship.png")
-    shieldSprite = pygame.image.load("assets/Shield.png")
+    playerSprite = pygame.image.load("assets/sprites/Ship.png")
+    shieldSprite = pygame.image.load("assets/sprites/Shield.png")
     width = playerSprite.get_width()
     height = playerSprite.get_height()
     shieldWidth = shieldSprite.get_width()
     shieldHeight = shieldSprite.get_height()
 
     #sfx
-    laserSound = pygame.mixer.Sound("assets/laser.wav")#
+    laserSound = pygame.mixer.Sound("assets/audio/laser.wav")
     laserSound.set_volume(0.2)
-    bulletSound = pygame.mixer.Sound("assets/bullet.wav")#
-    shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/bullet.wav")
+    shipHit = pygame.mixer.Sound("assets/audio/ship_hit.wav")
     shipHit.set_volume(0.3)
-    shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
+    shieldHit = pygame.mixer.Sound("assets/audio/shield_hit.wav")
     shieldHit.set_volume(0.2)
-    reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
+    reloadSound = pygame.mixer.Sound("assets/audio/reloaded.wav")
     reloadSound.set_volume(0.1)
-    shieldBreak = pygame.mixer.Sound("assets/shield_break.wav")
+    shieldBreak = pygame.mixer.Sound("assets/audio/shield_break.wav")
     shieldBreak.set_volume(0.5)
-    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode = pygame.mixer.Sound("assets/audio/explosion.wav")
     shipExplode.set_volume(0.5)
-    regenSound = pygame.mixer.Sound("assets/shield_regen.wav")
+    regenSound = pygame.mixer.Sound("assets/audio/shield_regen.wav")
     regenSound.set_volume(0.3)
-    gameLose = pygame.mixer.Sound("assets/lose.wav")
+    gameLose = pygame.mixer.Sound("assets/audio/lose.wav")
     gameLose.set_volume(0.5)
 
     def __init__(self):
@@ -471,7 +471,7 @@ class PlayerProjectile(Entity):
             self.dead = True
 
 class Bullet(PlayerProjectile):
-    sprite = pygame.image.load("assets/playerBullet.png")
+    sprite = pygame.image.load("assets/sprites/playerBullet.png")
     width = sprite.get_width()
     height = sprite.get_height()
     damage = 1
@@ -491,8 +491,8 @@ class Bullet(PlayerProjectile):
         screen.blit(Bullet.sprite, self.coords)
 
 class Laser(PlayerProjectile):
-    baseSprite = pygame.image.load("assets/laser_base.png")
-    sprite = pygame.image.load("assets/laser.png")
+    baseSprite = pygame.image.load("assets/sprites/laser_base.png")
+    sprite = pygame.image.load("assets/sprites/laser.png")
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
@@ -519,7 +519,7 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Bomb(PlayerProjectile):
-    sprite = pygame.image.load("assets/bomb.png")                                                      #change this
+    sprite = pygame.image.load("assets/sprites/bomb.png")                                                      #change this
     width = sprite.get_width()
     height = sprite.get_height()
     bombExplosionSprites = rawExplosionSprites.copy()
@@ -533,7 +533,7 @@ class Bomb(PlayerProjectile):
         self.radius = radius
         self.explosionSprites = []
         for e in range(12):
-            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/explosion/"+str(e)+".png"), (radius*2, radius*2)))
+            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/sprites/explosion"+str(e)+".png"), (radius*2, radius*2)))
 
     def move(self):
         self.coords[0] += self.speed
@@ -583,7 +583,7 @@ class Bomb(PlayerProjectile):
 
 class Enemy(Entity):
     hpMulti = 1
-    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode = pygame.mixer.Sound("assets/audio/explosion.wav")
     shipExplode.set_volume(0.5)
     spawnMargin = 25 #Closest 2 ships can spawn (Only affects Strafers and Blue turrets)
     def __init__(self):
@@ -599,14 +599,11 @@ class Enemy(Entity):
             self.w = BlueTurret.width
             self.h = BlueTurret.height
 
-        #print(type)
-
         iteration = 0
         while True:
             overlap = False
             POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
             if iteration > 100: #If overcrowded ignore overlaping
-                print("ERROR: Overcrowding")
                 break
             if POS[0] == 950 and len(enemiesR0) > 0:
                 for x in enemiesR0:
@@ -637,9 +634,6 @@ class Enemy(Entity):
             enemiesR2.append(self)
         else:
             enemiesR3.append(self)
-        
-        
-        
 
         direction = random.choice([-1,1])
 
@@ -674,15 +668,8 @@ class Enemy(Entity):
                 dirR3 = -1
             self.coords[1] += dirR3*Strafer.speed
 
-
-        '''if self.coords[1] <= 0:
-            self.direction = 1
-        elif self.coords[1] >= scrn_h-Strafer.height:
-            self.direction = -1
-        self.coords[1] += self.direction*Strafer.speed'''
-
 class Strafer(Enemy):
-    sprite = pygame.image.load("assets/cargoShip.png")
+    sprite = pygame.image.load("assets/sprites/cargoShip.png")
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -709,13 +696,13 @@ class Strafer(Enemy):
         screen.blit(Strafer.sprite, self.coords)
 
 class BlueTurret(Enemy):
-    sprite = pygame.image.load("assets/blueTurret.png")                                                 #change this
+    sprite = pygame.image.load("assets/sprites/blueTurret.png")                                                 #change this
     bounty = 200
     speed = 0.5
     firerate = 300
     width = sprite.get_width()
     height = sprite.get_height()
-    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/enemy_shoot.wav")
     bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
@@ -756,7 +743,7 @@ class EnemyProjectile(Enemy):
             self.dead = True
 
 class EnemyBullet(EnemyProjectile):
-    sprite = pygame.image.load("assets/EnemyBullet.png")
+    sprite = pygame.image.load("assets/sprites/EnemyBullet.png")
     speed = 10
     width = sprite.get_width()
     height = sprite.get_height()
@@ -777,7 +764,7 @@ class EnemyBullet(EnemyProjectile):
         screen.blit(EnemyBullet.sprite, self.coords)
 
 class SuicideEnemy(Enemy):
-    sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
+    sprite = pygame.transform.scale(pygame.image.load("assets/sprites/EnemySuicide.png"), (50, 50))
     bounty = 250
     speed = 10
     width = sprite.get_width()
@@ -873,7 +860,7 @@ class Fleet(Enemy):
             member.draw()
 
 class Fighter(Enemy):
-    sprite = pygame.image.load("assets/convoyShip.png")
+    sprite = pygame.image.load("assets/sprites/convoyShip.png")
     bounty = 20
     speed = 1
     width = sprite.get_width()
@@ -919,13 +906,13 @@ class Boss(Enemy):
                 stage.bossDead = True
 
 class MegaShip(Boss):
-    sprite = pygame.image.load("assets/redBoss.png")                                                                         #change this
+    sprite = pygame.image.load("assets/sprites/redBoss.png")                                                                         #change this
     firerate = 100
     suicide_firerate = 500
     speed = 0.5
     width = sprite.get_width()
     height = sprite.get_height()
-    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/enemy_shoot.wav")
     bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
@@ -1007,7 +994,7 @@ def main():
     
     frametime = pygame.time.Clock()
 
-    pygame.display.set_icon(pygame.image.load("assets/icon.png"))
+    pygame.display.set_icon(pygame.image.load("assets/sprites/icon.png"))
     pygame.display.set_caption("Space Invaders")
     screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
 
@@ -1207,11 +1194,6 @@ def playerBulletCore():
                             explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
                     else:
                         explosions.append([50, [0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
-
-                    
-
-
-                    
                     
                     if x.dead:
                         try:
@@ -1225,7 +1207,6 @@ def playerBulletCore():
                     if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
                         member.collide(x)
                         x.collide(member)
-
 
                         x_offset = random.randrange(-25, 25)
                         y_offset = 0
@@ -1242,11 +1223,6 @@ def playerBulletCore():
                                 explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
                         else:
                             explosions.append([50,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
-
-                        
-
-
-                        
                         
                         if x.dead:
                             try:
