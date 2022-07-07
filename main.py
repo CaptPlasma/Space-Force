@@ -13,9 +13,6 @@ my_font = pygame.font.SysFont('Comic Sans MS', 30)
 spawnRate = 60     #interval before enemies spawn
 spawnDelay = 0    #Initial delay before spawning
 
-explosions = []
-rawExplosionSprites = []
-
 enemiesR0 = []
 enemiesR1 = []
 enemiesR2 = []
@@ -39,17 +36,19 @@ pygameNumKeys = [
     pygame.K_0
 ]
 
+explosions = []
+rawExplosionSprites = []
 for x in range(12):
-    rawExplosionSprites.append(pygame.image.load("assets/explosion/"+str(x)+".png"))
+    rawExplosionSprites.append(pygame.image.load("assets/sprites/explosion"+str(x)+".png"))
 
 class Stage():
     def __init__(self):
-        self.background = pygame.image.load("assets/background.png")
+        self.background = pygame.image.load("assets/sprites/background.png")
         self.enemyCap = 10
         self.toSpawn = 10
         self.spawned = 0
         self.stageEnd = 300
-        self.enemyProgression = 1
+        self.enemyProgression = 0
         self.level = 1
         self.bossDead = False
         self.changeText = my_font.render("Stage "+str(self.level), True, (255, 255, 255))
@@ -59,7 +58,7 @@ class Stage():
         self.title = Title()
 
         #music
-        pygame.mixer.music.load("assets/background.wav")#
+        pygame.mixer.music.load("assets/audio/background.wav")#
         pygame.mixer.music.set_volume(0.1)#
         pygame.mixer.music.play(-1)# 
     
@@ -87,7 +86,7 @@ class Stage():
             self.enemyProgression = 2
 
     def spawnBoss(self):
-        bossTypes = [MegaShip()]
+        bossTypes = [InsurgentCarrier()]
         self.enemies.append(random.choice(bossTypes.copy()))
 
     def paused(self):
@@ -121,25 +120,138 @@ class Stage():
             for enemy in self.enemies:
                 enemy.update()
 
+class ShopButton():
+    def __init__(self, item, details, x=0, y=0, width=0, height=0):
+        self.item = item
+        self.details = details
+        self.rect = pygame.Rect(x, y, width, height)
+
+    def isLocked(self):
+        return self.details[5]
+    
+    def isMaxed(self):
+        return self.details[0] >= self.details[1] and self.details[1] > 0
+
+    def display(self):
+        if self.isLocked():
+            pygame.draw.rect(screen, (220, 220, 220), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.rect.center)
+        elif self.isMaxed():
+            pygame.draw.rect(screen, (220, 220, 220), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.rect.copy().move(350, 50))
+        elif player.money < self.details[2]:
+            pygame.draw.rect(screen, (220, 220, 220), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render('$'+str(int(self.details[2]))[:-2]+'.'+str(int(self.details[2]))[-2:], True, (0, 0, 0)), (self.rect.x, self.rect.centery))
+            if self.details[1] == -1:
+                screen.blit(my_font.render("Lv. "+str(self.details[0]), True, (0, 0, 0)), self.rect.copy().move(350,50))
+            else:
+                screen.blit(my_font.render("Lv. "+str(self.details[0])+'/'+str(self.details[1]), True, (0, 0, 0)), self.rect.copy().move(350, 50))
+        else:
+            pygame.draw.rect(screen, (0, 255, 0), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render('$'+str(int(self.details[2]))[:-2]+'.'+str(int(self.details[2]))[-2:], True, (0, 0, 0)), (self.rect.x, self.rect.centery))
+            if self.details[1] == -1:
+                screen.blit(my_font.render("Lv. "+str(self.details[0]), True, (0, 0, 0)), self.rect.copy().move(350,50))
+            else:
+                screen.blit(my_font.render("Lv. "+str(self.details[0])+'/'+str(self.details[1]), True, (0, 0, 0)), self.rect.copy().move(350, 50))
+
+class ButtonCarousel():
+    def __init__(self, x, y, width, height, *buttons):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.lBut = pygame.Rect(self.rect.x, self.rect.y, self.rect.height/5, self.rect.height)
+        self.rBut = pygame.Rect(self.rect.x+self.rect.width-self.rect.height/5, self.rect.y, self.rect.height/5, self.rect.height)
+        self.buttons = []
+        x += height/2.5
+        for button in buttons:
+            button.rect.left = x
+            button.rect.top = y
+            button.rect.width = height*5
+            button.rect.height = height
+            self.buttons.append(button)
+            x+=height*26/5
+
+    def scroll(self, direction):
+        if direction not in [-1, 1]:
+            print("ERROR: ButtonCarousel scroll requires direction -1 or 1")
+            return
+        if self.rect.right-self.rect.height*5 > self.buttons[-1].rect.left and direction == -1:
+            return
+        if self.rect.left+self.rect.height*5 < self.buttons[0].rect.right and direction == 1:
+            return
+        for button in self.buttons:
+            button.rect.x += self.rect.height*26/5*direction
+    
+    def display(self):
+        pygame.draw.rect(screen, (220, 220, 220), self.lBut)
+        pygame.draw.rect(screen, (220, 220, 220), self.rBut)
+        for button in self.buttons:
+            if self.rect.left+self.rect.height/5 <= button.rect.left and self.rect.right-self.rect.height/5 >= button.rect.right:
+                button.display()
+
 class Shop():
     def __init__(self):
         self.active = False
-        self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...]]
-            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3]],
-            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5, 1.03], [0, 0, 3]],
-            "Upgrade Laser Cannon Speed": [1, 11, 500, [100, 1.1], [0, 0]],
-            "Buy Laser Beam": [0, 1, 10000, [], []],
-            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
-            "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0]],
-            "Buy Bomb": [0, 1, 30000, [], []],
-            "Upgrade Bomb Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3]],
-            "Upgrade Bomb Cooldown": [0, 11, 50000, [0, 1.5, 1.1], [0, 0, 5]],
-            "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3]]
+        self.items = {# name = [level, max, price, price scaling[liner, exponential, ...], scaling start level[linear, exponential, ...], locked]
+            "Upgrade Laser Cannon Damage": [1, -1, 1500, [500, 1.2, 1.01], [0, 0, 3], False],
+            "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5, 1.03], [0, 0, 3], False],
+            "Upgrade Laser Cannon Velocity": [1, 11, 500, [100, 1.1], [0, 0], False],
+            "Buy Laser Beam": [0, 1, 10000, [], [], False],
+            "Upgrade Laser Beam Damage": [1, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
+            "Upgrade Laser Beam Duration": [1, 12, 100000, [0, 2], [0, 0], True],
+            "Upgrade Laser Beam Cooldown": [1, 6, 250000, [0, 1.2, 1.07], [0, 0, 3], True],
+            "Buy Bomb": [0, 1, 30000, [], [], True],
+            "Upgrade Bomb Damage": [1, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
+            "Upgrade Bomb Cooldown": [1, 12, 50000, [0, 1.5, 1.1], [0, 0, 5], True],
+            "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3], True]
         }
+
+        self.buttons = []
+
+        self.cannonCarousel = ButtonCarousel(150, 200, scrn_w-300, 100,
+            ShopButton("Upgrade Laser Cannon Damage", self.items["Upgrade Laser Cannon Damage"]),
+            ShopButton("Upgrade Laser Cannon Cooldown", self.items["Upgrade Laser Cannon Cooldown"]),
+            ShopButton("Upgrade Laser Cannon Velocity", self.items["Upgrade Laser Cannon Velocity"])
+        )
+        for button in self.cannonCarousel.buttons:
+            self.buttons.append(button)
+
+        self.laserCarousel = ButtonCarousel(150, 350, scrn_w-300, 100,
+            ShopButton("Buy Laser Beam", self.items["Buy Laser Beam"]),
+            ShopButton("Upgrade Laser Beam Damage", self.items["Upgrade Laser Beam Damage"]),
+            ShopButton("Upgrade Laser Beam Duration", self.items["Upgrade Laser Beam Duration"]),
+            ShopButton("Upgrade Laser Beam Cooldown", self.items["Upgrade Laser Beam Cooldown"])
+        )
+        for button in self.laserCarousel.buttons:
+            self.buttons.append(button)
+
+        self.bombCarousel = ButtonCarousel(150, 500, scrn_w-300, 100,
+            ShopButton("Buy Bomb", self.items["Buy Bomb"]),
+            ShopButton("Upgrade Bomb Damage", self.items["Upgrade Bomb Damage"]),
+            ShopButton("Upgrade Bomb Cooldown", self.items["Upgrade Bomb Cooldown"])
+        )
+        for button in self.bombCarousel.buttons:
+            self.buttons.append(button)
+
+        self.shieldCarousel = ButtonCarousel(150, 650, scrn_w-300, 100,
+            ShopButton("Upgrade Shield Regen Speed", self.items["Upgrade Shield Regen Speed"])
+        )
+        for button in self.shieldCarousel.buttons:
+            self.buttons.append(button)
+
+        self.carousels = [
+            self.cannonCarousel,
+            self.laserCarousel,
+            self.bombCarousel,
+            self.shieldCarousel
+        ]
+
         self.itemKeys = [
             "Upgrade Laser Cannon Damage",
             "Upgrade Laser Cannon Cooldown",
-            "Upgrade Laser Cannon Speed",
+            "Upgrade Laser Cannon Velocity",
             "Buy Laser Beam",
             "Upgrade Laser Beam Damage",
             "Upgrade Laser Beam Duration",
@@ -149,82 +261,54 @@ class Shop():
             "Upgrade Shield Regen Speed"
         ]
         self.clickToggle = False
-    
-    def buy(self, item):
-        if item in self.items:
-            upgrade = self.items[item]
-            if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
-                return
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                upgrade[0] += 1
-                player.money -= int(upgrade[2])
-                for scale in range(len(upgrade[4])):
-                    if upgrade[0] > upgrade[4][scale]:
-                        if scale == 0:
-                            upgrade[2] += upgrade[3][0]
-                        elif scale == 1:
-                            upgrade[2] = upgrade[2] * upgrade[3][1]
-                        elif scale == 2:
-                            upgrade[2] = upgrade[2] ** upgrade[3][2]
-                    else:
-                        break
-                if item == "Upgrade Laser Cannon Damage":
-                    Bullet.damage += min(0.25, Bullet.damage**-0.9)
-                elif item == "Upgrade Laser Cannon Cooldown":
-                    player.bullet_firerate -= 10
-                elif item == "Upgrade Laser Cannon Speed":
-                    player.bulletSpeed += 3
-                elif item == "Buy Laser Beam":
-                    player.unlockedWeapons.append("Laser Beam")
-                    self.items["Upgrade Laser Beam Damage"][0] = 1
-                    self.items["Upgrade Laser Beam Duration"][0] = 1
-                elif item == "Upgrade Laser Beam Damage":
-                    Laser.damage += 0.01
-                elif item == "Upgrade Laser Beam Duration":
-                    player.laserDuration += 50
-                elif item == "Buy Bomb":
-                    self.items["Upgrade Bomb Damage"][0] = 1
-                    self.items["Upgrade Bomb Cooldown"][0] = 1
-                    player.unlockedWeapons.append("Bomb")
-                elif item == "Upgrade Bomb Damage":
-                    Bomb.damage += 0.5
-                elif item == "Upgrade Bomb Cooldown":
-                    player.bomb_firerate -= 100
-                elif item == "Upgrade Shield Regen Speed":
-                    player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
+
+    def buy(self, button):
+        if not (button.isLocked() or button.isMaxed() or button.details[2] > player.money):
+            print(button.item)
+            upgrade = button.details
+            player.money -= int(upgrade[2])
+            for scale in range(len(upgrade[4])):
+                if upgrade[0] > upgrade[4][scale]:
+                    if scale == 0:
+                        upgrade[2] += upgrade[3][0]
+                    elif scale == 1:
+                        upgrade[2] = upgrade[2] * upgrade[3][1]
+                    elif scale == 2:
+                        upgrade[2] = upgrade[2] ** upgrade[3][2]
+                else:
+                    break
+            if button.item == "Upgrade Laser Cannon Damage":
+                Bullet.damage += min(0.25, Bullet.damage**-0.9)
+            elif button.item == "Upgrade Laser Cannon Cooldown":
+                player.bullet_firerate -= 10
+            elif button.item == "Upgrade Laser Cannon Velocity":
+                player.bulletSpeed += 3
+            elif button.item == "Buy Laser Beam":
+                player.unlockedWeapons.append("Laser Beam")
+                self.laserCarousel.buttons[0].details[5] = False
+                self.laserCarousel.buttons[1].details[5] = False
+            elif button.item == "Upgrade Laser Beam Damage":
+                Laser.damage += 0.01
+            elif button.item == "Upgrade Laser Beam Duration":
+                player.laserDuration += 50
+            elif button.item == "Upgrade Laser Beam Cooldown":
+                player.laser_firerate -= 100
+            elif button.item == "Buy Bomb":
+                player.unlockedWeapons.append("Bomb")
+                self.bombCarousel.buttons[0].details[5] = False
+                self.bombCarousel.buttons[1].details[5] = False
+            elif button.item == "Upgrade Bomb Damage":
+                Bomb.damage += 0.5
+            elif button.item == "Upgrade Bomb Cooldown":
+                player.bomb_firerate -= 100
+            elif button.item == "Upgrade Shield Regen Speed":
+                player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
     def display(self):
-        x_offset = 150
-        y_offset = 200
-        button_w = 500
-        button_h = 100
-        spacing_w = 50
-        spacing_h = 50
-        self.buttons = []
-        button = 0
-        for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                color = (0, 255, 0)
-            else:
-                color = (220, 220, 220)
-            self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
-            pygame.draw.rect(screen, color, self.buttons[button])
-            screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
-            if (self.items[key][0] == 0 and key not in ["Buy Laser Beam", "Buy Bomb"]) or (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
-            elif self.items[key][1] == -1:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
-            elif self.items[key][0] < self.items[key][1]:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
-            elif self.items[key][0] >= self.items[key][1]:
-                screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
-            x_offset += button_w + spacing_w
-            if x_offset + button_w + 100 > scrn_w:
-                x_offset = 150
-                y_offset += button_h + spacing_h
-            button += 1
-        
+        self.cannonCarousel.display()
+        self.laserCarousel.display()
+        self.bombCarousel.display()
+        self.shieldCarousel.display()
         continue_text = my_font.render("Press ENTER to Continue", False, (255, 255, 255))
         screen.blit(continue_text, (screen.get_width()/2 - continue_text.get_width()/2, 3*screen.get_height()/4))
 
@@ -233,9 +317,14 @@ class Shop():
         mouse = pygame.mouse.get_pressed()
         if mouse[0] and not self.clickToggle:
             self.clickToggle = True
-            for button in range(len(self.buttons)):
-                if self.buttons[button].collidepoint(pos):
-                    self.buy(self.itemKeys[button])
+            for button in self.buttons:
+                if button.rect.collidepoint(pos):
+                    self.buy(button)
+            for carousel in self.carousels:
+                if carousel.lBut.collidepoint(pos):
+                    carousel.scroll(-1)
+                elif carousel.rBut.collidepoint(pos):
+                    carousel.scroll(1)
         elif not mouse[0]:
             self.clickToggle = False
 
@@ -245,7 +334,6 @@ class Shop():
             self.active = False
         self.detectClick()
         self.display()
-
 
 class Title():
     def __init__(self):
@@ -279,38 +367,35 @@ class Title():
             self.active = False
         self.display()
 
-
-
-
 class Entity():
     def __init__(self):
         self.dead = False
 
 class Player(Entity):
-    playerSprite = pygame.image.load("assets/Ship.png")
-    shieldSprite = pygame.image.load("assets/Shield.png")
+    playerSprite = pygame.image.load("assets/sprites/player.png")
+    shieldSprite = pygame.image.load("assets/sprites/shield.png")
     width = playerSprite.get_width()
     height = playerSprite.get_height()
     shieldWidth = shieldSprite.get_width()
     shieldHeight = shieldSprite.get_height()
 
     #sfx
-    laserSound = pygame.mixer.Sound("assets/laser.wav")#
+    laserSound = pygame.mixer.Sound("assets/audio/laser.wav")
     laserSound.set_volume(0.2)
-    bulletSound = pygame.mixer.Sound("assets/bullet.wav")#
-    shipHit = pygame.mixer.Sound("assets/ship_hit.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/bullet.wav")
+    shipHit = pygame.mixer.Sound("assets/audio/ship_hit.wav")
     shipHit.set_volume(0.3)
-    shieldHit = pygame.mixer.Sound("assets/shield_hit.wav")
+    shieldHit = pygame.mixer.Sound("assets/audio/shield_hit.wav")
     shieldHit.set_volume(0.2)
-    reloadSound = pygame.mixer.Sound("assets/reloaded.wav")
+    reloadSound = pygame.mixer.Sound("assets/audio/reloaded.wav")
     reloadSound.set_volume(0.1)
-    shieldBreak = pygame.mixer.Sound("assets/shield_break.wav")
+    shieldBreak = pygame.mixer.Sound("assets/audio/shield_break.wav")
     shieldBreak.set_volume(0.5)
-    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode = pygame.mixer.Sound("assets/audio/explosion.wav")
     shipExplode.set_volume(0.5)
-    regenSound = pygame.mixer.Sound("assets/shield_regen.wav")
+    regenSound = pygame.mixer.Sound("assets/audio/shield_regen.wav")
     regenSound.set_volume(0.3)
-    gameLose = pygame.mixer.Sound("assets/lose.wav")
+    gameLose = pygame.mixer.Sound("assets/audio/lose.wav")
     gameLose.set_volume(0.5)
 
     def __init__(self):
@@ -356,7 +441,7 @@ class Player(Entity):
     def shoot(self):
         if self.unlockedWeapons[self.weapon] == "Laser Cannon":
             if self.bulletCD <= 0:
-                self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
+                self.bullets.append(Bullet([self.coords[0], self.coords[1]+self.height/2-Bullet.height/2], self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
                 Player.bulletSound.play()
         elif self.unlockedWeapons[self.weapon] == "Laser Beam":
@@ -370,7 +455,7 @@ class Player(Entity):
                 Player.laserSound.fadeout(300)
         elif self.unlockedWeapons[self.weapon] == "Bomb":
             if self.bombCD <= 0:
-                self.bombs.append(Bomb(self.coords.copy(), self.bombDistance, self.bombRadius, 0))
+                self.bombs.append(Bomb([self.coord[0], self.coords[1]+self.height/2-Bomb.height/2], self.bombDistance, self.bombRadius, 0))
                 self.bombCD = self.bomb_firerate
                 Player.bulletSound.play()
 
@@ -476,7 +561,7 @@ class PlayerProjectile(Entity):
             self.dead = True
 
 class Bullet(PlayerProjectile):
-    sprite = pygame.image.load("assets/playerBullet.png")
+    sprite = pygame.image.load("assets/sprites/player_bullet.png")
     width = sprite.get_width()
     height = sprite.get_height()
     damage = 1
@@ -496,8 +581,8 @@ class Bullet(PlayerProjectile):
         screen.blit(Bullet.sprite, self.coords)
 
 class Laser(PlayerProjectile):
-    baseSprite = pygame.image.load("assets/laser_base.png")
-    sprite = pygame.image.load("assets/laser.png")
+    baseSprite = pygame.image.load("assets/sprites/laser_base.png")
+    sprite = pygame.image.load("assets/sprites/laser.png")
     width = sprite.get_width()
     height = sprite.get_height()
     baseOffsetY = (baseSprite.get_height()-height)/2
@@ -524,7 +609,7 @@ class Laser(PlayerProjectile):
             screen.blit(Laser.baseSprite, [self.coords[0], self.coords[1]-Laser.baseOffsetY])
 
 class Bomb(PlayerProjectile):
-    sprite = pygame.image.load("assets/bomb.png")                                                      #change this
+    sprite = pygame.image.load("assets/sprites/bomb.png")                                                      #change this
     width = sprite.get_width()
     height = sprite.get_height()
     bombExplosionSprites = rawExplosionSprites.copy()
@@ -538,7 +623,7 @@ class Bomb(PlayerProjectile):
         self.radius = radius
         self.explosionSprites = []
         for e in range(12):
-            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/explosion/"+str(e)+".png"), (radius*2, radius*2)))
+            self.explosionSprites.append(pygame.transform.scale(pygame.image.load("assets/sprites/explosion"+str(e)+".png"), (radius*2, radius*2)))
 
     def move(self):
         self.coords[0] += self.speed
@@ -588,30 +673,27 @@ class Bomb(PlayerProjectile):
 
 class Enemy(Entity):
     hpMulti = 1
-    shipExplode = pygame.mixer.Sound("assets/explosion.wav")
+    shipExplode = pygame.mixer.Sound("assets/audio/explosion.wav")
     shipExplode.set_volume(0.5)
-    spawnMargin = 25 #Closest 2 ships can spawn (Only affects Strafers and Blue turrets)
+    spawnMargin = 25 #Closest 2 ships can spawn (Only affects CargoShips and Blue turrets)
     def __init__(self):
         super().__init__()
 
     def positionChooser(self, type):
         global enemiesR0, enemiesR1, enemiesR2, enemiesR3, dirR0, dirR1, dirR2, dirR3
 
-        if type == "Strafer":
-            self.w = Strafer.width
-            self.h = Strafer.height
-        elif type == "BlueTurret":
-            self.w = BlueTurret.width
-            self.h = BlueTurret.height
-
-        #print(type)
+        if type == "CargoShip":
+            self.w = CargoShip.width
+            self.h = CargoShip.height
+        elif type == "Fighter":
+            self.w = Fighter.width
+            self.h = Fighter.height
 
         iteration = 0
         while True:
             overlap = False
-            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-Strafer.height*5, scrn_h/2+Strafer.height*4)]
+            POS = [random.choice([950, 1200, 1200, 1450, 1450, 1700, 1700]), random.randint(scrn_h/2-CargoShip.height*5, scrn_h/2+CargoShip.height*4)]
             if iteration > 100: #If overcrowded ignore overlaping
-                print("ERROR: Overcrowding")
                 break
             if POS[0] == 950 and len(enemiesR0) > 0:
                 for x in enemiesR0:
@@ -642,9 +724,6 @@ class Enemy(Entity):
             enemiesR2.append(self)
         else:
             enemiesR3.append(self)
-        
-        
-        
 
         direction = random.choice([-1,1])
 
@@ -659,35 +738,28 @@ class Enemy(Entity):
                 dirR0 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR0 = -1
-            self.coords[1] += dirR0*Strafer.speed
+            self.coords[1] += dirR0*CargoShip.speed
         elif self in enemiesR1:
             if self.coords[1] <= 0:
                 dirR1 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR1 = -1
-            self.coords[1] += dirR1*Strafer.speed
+            self.coords[1] += dirR1*CargoShip.speed
         elif self in enemiesR2:
             if self.coords[1] <= 0:
                 dirR2 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR2 = -1
-            self.coords[1] += dirR2*Strafer.speed
+            self.coords[1] += dirR2*CargoShip.speed
         else:
             if self.coords[1] <= 0:
                 dirR3 = 1
             elif self.coords[1] > scrn_h-100:
                 dirR3 = -1
-            self.coords[1] += dirR3*Strafer.speed
+            self.coords[1] += dirR3*CargoShip.speed
 
-
-        '''if self.coords[1] <= 0:
-            self.direction = 1
-        elif self.coords[1] >= scrn_h-Strafer.height:
-            self.direction = -1
-        self.coords[1] += self.direction*Strafer.speed'''
-
-class Strafer(Enemy):
-    sprite = pygame.image.load("assets/cargoShip.png")
+class CargoShip(Enemy):
+    sprite = pygame.image.load("assets/sprites/cargo_ship.png")
     bounty = 100
     speed = 1
     width = sprite.get_width()
@@ -695,7 +767,7 @@ class Strafer(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords, self.direction = self.positionChooser("Strafer")
+        self.coords, self.direction = self.positionChooser("CargoShip")
         self.hp = 1*Enemy.hpMulti
 
 
@@ -708,32 +780,32 @@ class Strafer(Enemy):
       
     def update(self):
         self.move()
-        screen.blit(Strafer.sprite, self.coords)
+        screen.blit(CargoShip.sprite, self.coords)
     
     def draw(self):
-        screen.blit(Strafer.sprite, self.coords)
+        screen.blit(CargoShip.sprite, self.coords)
 
-class BlueTurret(Enemy):
-    sprite = pygame.image.load("assets/blueTurret.png")                                                 #change this
+class Fighter(Enemy):
+    sprite = pygame.image.load("assets/sprites/insurgent_fighter.png")
     bounty = 200
     speed = 0.5
     firerate = 300
     width = sprite.get_width()
     height = sprite.get_height()
-    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/enemy_shoot.wav")
     bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
         super().__init__()
-        self.coords, self.direction = self.positionChooser("BlueTurret")
-        self.cooldown = BlueTurret.firerate
+        self.coords, self.direction = self.positionChooser("Fighter")
+        self.cooldown = Fighter.firerate
         self.hp = 3*Enemy.hpMulti
 
     def shoot(self):
         if self.cooldown <= 0:
-            BlueTurret.bulletSound.play()
-            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(BlueTurret.height-EnemyBullet.height)/2]))
-            self.cooldown = BlueTurret.firerate
+            Fighter.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(Fighter.height-EnemyBullet.height)/2]))
+            self.cooldown = Fighter.firerate
     
     def collide(self, other):
         if isinstance(other, PlayerProjectile):
@@ -746,10 +818,10 @@ class BlueTurret(Enemy):
         self.cooldown -= 1
         self.move()
         self.shoot()
-        screen.blit(BlueTurret.sprite, self.coords)
+        screen.blit(Fighter.sprite, self.coords)
     
     def draw(self):
-        screen.blit(BlueTurret.sprite, self.coords)
+        screen.blit(Fighter.sprite, self.coords)
 
 class EnemyProjectile(Enemy):
     def __init__(self, coords):
@@ -761,7 +833,7 @@ class EnemyProjectile(Enemy):
             self.dead = True
 
 class EnemyBullet(EnemyProjectile):
-    sprite = pygame.image.load("assets/EnemyBullet.png")
+    sprite = pygame.image.load("assets/sprites/EnemyBullet.png")
     speed = 10
     width = sprite.get_width()
     height = sprite.get_height()
@@ -781,8 +853,8 @@ class EnemyBullet(EnemyProjectile):
     def draw(self):
         screen.blit(EnemyBullet.sprite, self.coords)
 
-class SuicideEnemy(Enemy):
-    sprite = pygame.transform.scale(pygame.image.load("assets/EnemySuicide.png"), (50, 50))
+class KamikazeSpacecraft(Enemy):
+    sprite = pygame.transform.scale(pygame.image.load("assets/sprites/kamikaze_spacecraft.png"), (50, 50))
     bounty = 250
     speed = 10
     width = sprite.get_width()
@@ -792,17 +864,17 @@ class SuicideEnemy(Enemy):
     def __init__(self):
         super().__init__()
         self.coords = [random.randint(scrn_w/2, scrn_w*3/4), random.randint(100, scrn_h-100)]
-        self.time = SuicideEnemy.prepTime
+        self.time = KamikazeSpacecraft.prepTime
         self.hp = 0.5*Enemy.hpMulti
     
     def move(self):
         if(self.time > 0):
             self.angle = math.atan((self.coords[1]-player.coords[1])/(self.coords[0]-player.coords[0]))
-            self.coords[0] += SuicideEnemy.speed/100
+            self.coords[0] += KamikazeSpacecraft.speed/100
         else:
-            self.coords[0] -= math.cos(self.angle)*SuicideEnemy.speed
-            self.coords[1] -= math.sin(self.angle)*SuicideEnemy.speed
-            if self.coords[0] <= 0-SuicideEnemy.width:
+            self.coords[0] -= math.cos(self.angle)*KamikazeSpacecraft.speed
+            self.coords[1] -= math.sin(self.angle)*KamikazeSpacecraft.speed
+            if self.coords[0] <= 0-KamikazeSpacecraft.width:
                 self.dead = True
 
     def collide(self, other):
@@ -819,10 +891,10 @@ class SuicideEnemy(Enemy):
         if self.time:
             self.time -= 1
         self.move()
-        screen.blit(SuicideEnemy.sprite, self.coords)
+        screen.blit(KamikazeSpacecraft.sprite, self.coords)
     
     def draw(self):
-        screen.blit(SuicideEnemy.sprite, self.coords)
+        screen.blit(KamikazeSpacecraft.sprite, self.coords)
 
 class Fleet(Enemy):
     bounty = 250
@@ -830,13 +902,13 @@ class Fleet(Enemy):
 
     def __init__(self):
         super().__init__()
-        self.coords = [scrn_w, random.randint(0, Fighter.height*5)]
+        self.coords = [scrn_w, random.randint(0, ConvoyShip.height*5)]
         self.fleetMembers = [
-            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]]),
-            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height]),
-            Fighter([self.coords[0], self.coords[1]+Fighter.height*2]),
-            Fighter([self.coords[0]+Fighter.width, self.coords[1]+Fighter.height*3]),
-            Fighter([self.coords[0]+Fighter.width*2, self.coords[1]+Fighter.height*4])
+            ConvoyShip([self.coords[0]+ConvoyShip.width*2, self.coords[1]]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width, self.coords[1]+ConvoyShip.height]),
+            ConvoyShip([self.coords[0], self.coords[1]+ConvoyShip.height*2]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width, self.coords[1]+ConvoyShip.height*3]),
+            ConvoyShip([self.coords[0]+ConvoyShip.width*2, self.coords[1]+ConvoyShip.height*4])
         ]
         for member in self.fleetMembers:
             member.speed = self.speed
@@ -845,7 +917,7 @@ class Fleet(Enemy):
     
     def move(self):
         self.coords[0] -= self.speed
-        if self.coords[0] + Fighter.width*3 < 0:
+        if self.coords[0] + ConvoyShip.width*3 < 0:
             for member in self.fleetMembers:
                 self.fleetMembers.remove(member)
             self.dead = True
@@ -877,8 +949,8 @@ class Fleet(Enemy):
                 continue
             member.draw()
 
-class Fighter(Enemy):
-    sprite = pygame.image.load("assets/convoyShip.png")
+class ConvoyShip(Enemy):
+    sprite = pygame.image.load("assets/sprites/convoy_ship.png")
     bounty = 20
     speed = 1
     width = sprite.get_width()
@@ -904,10 +976,10 @@ class Fighter(Enemy):
     
     def update(self):
         self.move()
-        screen.blit(Fighter.sprite, self.coords)
+        screen.blit(ConvoyShip.sprite, self.coords)
     
     def draw(self):
-        screen.blit(Fighter.sprite, self.coords)
+        screen.blit(ConvoyShip.sprite, self.coords)
 
 class Boss(Enemy):
     bounty = 10000
@@ -923,55 +995,55 @@ class Boss(Enemy):
                 self.dead = True
                 stage.bossDead = True
 
-class MegaShip(Boss):
-    sprite = pygame.image.load("assets/redBoss.png")                                                                         #change this
+class InsurgentCarrier(Boss):
+    sprite = pygame.image.load("assets/sprites/insurgent_carrier.png")                                                                         #change this
     firerate = 100
     suicide_firerate = 500
     speed = 0.5
     width = sprite.get_width()
     height = sprite.get_height()
-    bulletSound = pygame.mixer.Sound("assets/enemy_shoot.wav")
+    bulletSound = pygame.mixer.Sound("assets/audio/enemy_shoot.wav")
     bulletSound.set_volume(0.08)#idk too loud
 
     def __init__(self):
         super().__init__()
-        self.coords = [(scrn_w-MegaShip.width)*4/5, (scrn_h-MegaShip.height)/2]
+        self.coords = [(scrn_w-InsurgentCarrier.width)*4/5, (scrn_h-InsurgentCarrier.height)/2]
         self.hp = 20*Enemy.hpMulti
-        self.cooldown = MegaShip.firerate
-        self.suicideCooldown = MegaShip.suicide_firerate
+        self.cooldown = InsurgentCarrier.firerate
+        self.suicideCooldown = InsurgentCarrier.suicide_firerate
         self.direction = random.choice([-1,1])
-        self.bossBar = Bar(self.coords[0], self.coords[1], MegaShip.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
+        self.bossBar = Bar(self.coords[0], self.coords[1], InsurgentCarrier.sprite.get_width(), 13, "", maxval=self.hp, color=(255, 0, 0))
 
     def move(self):
         if self.coords[1] <= 0:
             self.direction = 1
-        elif self.coords[1] >= scrn_h-MegaShip.height:
+        elif self.coords[1] >= scrn_h-InsurgentCarrier.height:
             self.direction = -1
-        self.coords[1] += self.direction*MegaShip.speed
+        self.coords[1] += self.direction*InsurgentCarrier.speed
 
     def shoot(self):
         if self.cooldown <= 0:
-            MegaShip.bulletSound.play()
-            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(MegaShip.height-MegaShip.height)/2]))
-            self.cooldown = MegaShip.firerate
+            InsurgentCarrier.bulletSound.play()
+            stage.enemies.append(EnemyBullet([self.coords[0], self.coords[1]+(InsurgentCarrier.height-InsurgentCarrier.height)/2]))
+            self.cooldown = InsurgentCarrier.firerate
         if self.suicideCooldown <= 0:
-            stage.enemies.append(SuicideEnemy())
-            self.suicideCooldown = MegaShip.suicide_firerate
+            stage.enemies.append(KamikazeSpacecraft())
+            self.suicideCooldown = InsurgentCarrier.suicide_firerate
     
     def update(self):
         self.cooldown -= 1
         self.suicideCooldown -= 1
         self.move()
         self.shoot()
-        screen.blit(MegaShip.sprite, self.coords)
+        screen.blit(InsurgentCarrier.sprite, self.coords)
 
         self.bossBar.update(self.hp)
         self.bossBar.x = self.coords[0]
-        self.bossBar.y = self.coords[1]+MegaShip.sprite.get_height()+25
+        self.bossBar.y = self.coords[1]+InsurgentCarrier.sprite.get_height()+25
         self.bossBar.display()
     
     def draw(self):
-        screen.blit(MegaShip.sprite, self.coords)
+        screen.blit(InsurgentCarrier.sprite, self.coords)
 
         self.bossBar.display()
 
@@ -1003,12 +1075,8 @@ class Bar():
     def update(self, val):
         self.value = val
 
-# define a main function
 def main():
     global screen, stage, player
-
-    coolDown = 0
-    activeWeapon = 0
 
     paused = False
 
@@ -1016,7 +1084,7 @@ def main():
     
     frametime = pygame.time.Clock()
 
-    pygame.display.set_icon(pygame.image.load("assets/icon.png"))
+    pygame.display.set_icon(pygame.image.load("assets/sprites/icon.png"))
     pygame.display.set_caption("Space Invaders")
     screen = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN|pygame.SCALED)
 
@@ -1075,7 +1143,7 @@ def main():
         health_bar.display()
         shield_bar.display()
         cooldown_bar.display()
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
+        renderHUD(frametime.get_fps())
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1084,8 +1152,6 @@ def main():
                 player.switchWeapon(player.getWeapon()+event.y*-1)
 
         keys = pygame.key.get_pressed()
-
-        renderHUD(coolDown, activeWeapon, frametime.get_fps())
 
         if player.hp <= 0:
             paused = True
@@ -1177,9 +1243,6 @@ def main():
         frametime.tick(120)
 
 def explosionCore(explosions):
-    
-    
-
     if len(explosions) != 0:
         for y in explosions:
             explosionSprites = []
@@ -1221,11 +1284,6 @@ def playerBulletCore():
                             explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
                     else:
                         explosions.append([50, [0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
-
-                    
-
-
-                    
                     
                     if x.dead:
                         try:
@@ -1239,7 +1297,6 @@ def playerBulletCore():
                     if member.coords[0] <= x.coords[0] + x.width and member.coords[0] + member.width >= x.coords[0] and member.coords[1] <= x.coords[1] + x.height and member.coords[1] + member.height >= x.coords[1]:          #detects bullet collision
                         member.collide(x)
                         x.collide(member)
-
 
                         x_offset = random.randrange(-25, 25)
                         y_offset = 0
@@ -1256,11 +1313,6 @@ def playerBulletCore():
                                 explosions.append([100,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
                         else:
                             explosions.append([50,[0, x.coords[0] + x_offset, x.coords[1] + y_offset]])
-
-                        
-
-
-                        
                         
                         if x.dead:
                             try:
@@ -1280,8 +1332,6 @@ def enemyCore(enemies):
             if not isinstance(x, EnemyProjectile):
                 numEnemies += 1
         if numEnemies < stage.enemyCap and stage.spawned < stage.toSpawn:
-            #enemyTypes = [Strafer(), BlueTurret(), Fleet(), SuicideEnemy()]
-            #enemies.append(random.choice(enemyTypes[0:stage.enemyProgression]))
 
             enemySpawner(enemies)
 
@@ -1311,40 +1361,20 @@ def enemyCore(enemies):
             else:
                 x.update()
 
-    #enemyMove(enemies)                                                                                     needs fixing
-
 def enemySpawner(enemies):
-    if stage.enemyProgression == 1:
-        enemies.append(Strafer())
-    elif stage.enemyProgression == 2:
-        rng = random.randint(0, 1)
-        if rng == 0:
-            enemies.append(Strafer())
-        else:
-            enemies.append(BlueTurret())
-    elif stage.enemyProgression == 3:
-        rng = random.randint(0,2)
-        if rng == 0:
-            enemies.append(Strafer())
-        elif rng == 1:
-            enemies.append(BlueTurret())
-        else:
-            enemies.append(Fleet())
-    elif stage.enemyProgression == 4:
-        rng = random.randint(0,3)
-        if rng == 0:
-            enemies.append(Strafer())
-        elif rng == 1:
-            enemies.append(BlueTurret())
-        elif rng == 2:
-            enemies.append(Fleet())
-        else:
-            enemies.append(SuicideEnemy())
+    rng = random.randint(0, stage.enemyProgression)
+    if rng == 0:
+        enemies.append(CargoShip())
+    elif rng == 1:
+        enemies.append(Fighter())
+    elif rng == 2:
+        enemies.append(Fleet())
+    elif rng == 3:
+        enemies.append(KamikazeSpacecraft())
     else:
-        print("ERROR: Stage above 4")
+        print("ERROR: no enemy at enemy progression stage ", rng)
 
-
-def renderHUD(coolDown, activeWeapon, fps):
+def renderHUD(fps):
     if stage.title.active:
         return
     activeWeaponText = my_font.render(player.unlockedWeapons[player.getWeapon()]+" Active", True, (255, 255, 255))
@@ -1356,7 +1386,6 @@ def renderHUD(coolDown, activeWeapon, fps):
         money = my_font.render('$'+str(int(player.money))[:-2]+'.'+str(int(player.money))[-2:], True, (255, 255, 255))
 
     frameRate = my_font.render(str(int(fps)), False, (0, 255, 0))
-    #screen.blit(CDtext, (10,0))
     screen.blit(activeWeaponText, (15, 100))
     screen.blit(frameRate, (1865, 0))
     screen.blit(money, (600,0))
@@ -1372,7 +1401,6 @@ def circ_rect_collide(circleCoords, radius, rect):
         if radius < ((circleCoords[0] - point[0])**2 + (circleCoords[1] - point[1]) **2)**.5:
             return True
     return False
-
      
 if __name__=="__main__":
     # call the main function
