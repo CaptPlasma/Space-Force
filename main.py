@@ -176,8 +176,13 @@ class ButtonCarousel():
     def scroll(self, direction):
         if direction not in [-1, 1]:
             print("ERROR: ButtonCarousel scroll requires direction -1 or 1")
+            return
+        if self.rect.right-self.rect.height*5 > self.buttons[-1].rect.left and direction == -1:
+            return
+        if self.rect.left+self.rect.height*5 < self.buttons[0].rect.right and direction == 1:
+            return
         for button in self.buttons:
-            button.rect.x += self.rect.height*5*direction
+            button.rect.x += self.rect.height*26/5*direction
     
     def display(self):
         pygame.draw.rect(screen, (220, 220, 220), self.lBut)
@@ -194,11 +199,12 @@ class Shop():
             "Upgrade Laser Cannon Cooldown": [1, 9, 3000, [0, 1.5, 1.03], [0, 0, 3], False],
             "Upgrade Laser Cannon Velocity": [1, 11, 500, [100, 1.1], [0, 0], False],
             "Buy Laser Beam": [0, 1, 10000, [], [], False],
-            "Upgrade Laser Beam Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
-            "Upgrade Laser Beam Duration": [0, 11, 100000, [0, 2], [0, 0], True],
+            "Upgrade Laser Beam Damage": [1, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
+            "Upgrade Laser Beam Duration": [1, 12, 100000, [0, 2], [0, 0], True],
+            "Upgrade Laser Beam Cooldown": [1, 6, 250000, [0, 1.2, 1.07], [0, 0, 3], True],
             "Buy Bomb": [0, 1, 30000, [], [], True],
-            "Upgrade Bomb Damage": [0, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
-            "Upgrade Bomb Cooldown": [0, 11, 50000, [0, 1.5, 1.1], [0, 0, 5], True],
+            "Upgrade Bomb Damage": [1, -1, 10000, [5000, 1.2, 1.07], [0, 0, 3], True],
+            "Upgrade Bomb Cooldown": [1, 12, 50000, [0, 1.5, 1.1], [0, 0, 5], True],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3], True]
         }
 
@@ -215,7 +221,8 @@ class Shop():
         self.laserCarousel = ButtonCarousel(150, 350, scrn_w-300, 100,
             ShopButton("Buy Laser Beam", self.items["Buy Laser Beam"]),
             ShopButton("Upgrade Laser Beam Damage", self.items["Upgrade Laser Beam Damage"]),
-            ShopButton("Upgrade Laser Beam Duration", self.items["Upgrade Laser Beam Duration"])
+            ShopButton("Upgrade Laser Beam Duration", self.items["Upgrade Laser Beam Duration"]),
+            ShopButton("Upgrade Laser Beam Cooldown", self.items["Upgrade Laser Beam Cooldown"])
         )
         for button in self.laserCarousel.buttons:
             self.buttons.append(button)
@@ -278,16 +285,18 @@ class Shop():
                 player.bulletSpeed += 3
             elif button.item == "Buy Laser Beam":
                 player.unlockedWeapons.append("Laser Beam")
-                self.items["Upgrade Laser Beam Damage"][0] = 1
-                self.items["Upgrade Laser Beam Duration"][0] = 1
+                self.laserCarousel.buttons[0].details[5] = False
+                self.laserCarousel.buttons[1].details[5] = False
             elif button.item == "Upgrade Laser Beam Damage":
                 Laser.damage += 0.01
             elif button.item == "Upgrade Laser Beam Duration":
                 player.laserDuration += 50
+            elif button.item == "Upgrade Laser Beam Cooldown":
+                player.laser_firerate -= 100
             elif button.item == "Buy Bomb":
-                self.items["Upgrade Bomb Damage"][0] = 1
-                self.items["Upgrade Bomb Cooldown"][0] = 1
                 player.unlockedWeapons.append("Bomb")
+                self.bombCarousel.buttons[0].details[5] = False
+                self.bombCarousel.buttons[1].details[5] = False
             elif button.item == "Upgrade Bomb Damage":
                 Bomb.damage += 0.5
             elif button.item == "Upgrade Bomb Cooldown":
@@ -432,7 +441,7 @@ class Player(Entity):
     def shoot(self):
         if self.unlockedWeapons[self.weapon] == "Laser Cannon":
             if self.bulletCD <= 0:
-                self.bullets.append(Bullet(self.coords.copy(), self.bulletSpeed, 0))
+                self.bullets.append(Bullet([self.coords[0], self.coords[1]+self.height/2-Bullet.height/2], self.bulletSpeed, 0))
                 self.bulletCD = self.bullet_firerate
                 Player.bulletSound.play()
         elif self.unlockedWeapons[self.weapon] == "Laser Beam":
@@ -446,7 +455,7 @@ class Player(Entity):
                 Player.laserSound.fadeout(300)
         elif self.unlockedWeapons[self.weapon] == "Bomb":
             if self.bombCD <= 0:
-                self.bombs.append(Bomb(self.coords.copy(), self.bombDistance, self.bombRadius, 0))
+                self.bombs.append(Bomb([self.coord[0], self.coords[1]+self.height/2-Bomb.height/2], self.bombDistance, self.bombRadius, 0))
                 self.bombCD = self.bomb_firerate
                 Player.bulletSound.play()
 
