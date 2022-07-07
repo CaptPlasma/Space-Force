@@ -130,25 +130,29 @@ class ShopButton():
         return self.details[5]
     
     def isMaxed(self):
-        return self.details[0] >= self.details[1]
+        return self.details[0] >= self.details[1] and self.details[1] > 0
 
-    def display(self, surface):
+    def display(self):
         if self.isLocked():
             pygame.draw.rect(screen, (220, 220, 220), self.rect)
-            text = my_font.render("Locked", True, (0, 0, 0))
-            surface.blit(text, text.get_rect(self.rect.center))
-        elif self.details[0] >= self.details[1]:
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.rect.center)
+        elif self.isMaxed():
             pygame.draw.rect(screen, (220, 220, 220), self.rect)
             screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
             screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.rect.copy().move(350, 50))
         elif player.money < self.details[2]:
             pygame.draw.rect(screen, (220, 220, 220), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render('$'+str(int(self.details[2]))[:-2]+'.'+str(int(self.details[2]))[-2:], True, (0, 0, 0)), (self.rect.x, self.rect.centery))
             if self.details[1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.details[0]), True, (0, 0, 0)), self.rect.copy().move(350,50))
             else:
                 screen.blit(my_font.render("Lv. "+str(self.details[0])+'/'+str(self.details[1]), True, (0, 0, 0)), self.rect.copy().move(350, 50))
         else:
             pygame.draw.rect(screen, (0, 255, 0), self.rect)
+            screen.blit(my_font.render(self.item, True, (0, 0, 0)), self.rect)
+            screen.blit(my_font.render('$'+str(int(self.details[2]))[:-2]+'.'+str(int(self.details[2]))[-2:], True, (0, 0, 0)), (self.rect.x, self.rect.centery))
             if self.details[1] == -1:
                 screen.blit(my_font.render("Lv. "+str(self.details[0]), True, (0, 0, 0)), self.rect.copy().move(350,50))
             else:
@@ -157,22 +161,27 @@ class ShopButton():
 class ButtonCarousel():
     def __init__(self, x, y, width, height, *buttons):
         self.rect = pygame.Rect(x, y, width, height)
+        self.lBut = pygame.Rect(self.rect.x, self.rect.y, self.rect.height/5, self.rect.height)
+        self.rBut = pygame.Rect(self.rect.x+self.rect.width-self.rect.height/5, self.rect.y, self.rect.height/5, self.rect.height)
         self.buttons = []
-        x += height/5
+        x += height/2.5
         for button in buttons:
             button.rect.left = x
             button.rect.top = y
             button.rect.width = height*5
             button.rect.height = height
             self.buttons.append(button)
+            x+=height*26/5
 
     def scroll(self, direction):
         if direction not in [-1, 1]:
             print("ERROR: ButtonCarousel scroll requires direction -1 or 1")
         for button in self.buttons:
-            button.x += self.rect.height*5*direction
+            button.rect.x += self.rect.height*5*direction
     
     def display(self):
+        pygame.draw.rect(screen, (220, 220, 220), self.lBut)
+        pygame.draw.rect(screen, (220, 220, 220), self.rBut)
         for button in self.buttons:
             if self.rect.left+self.rect.height/5 <= button.rect.left and self.rect.right-self.rect.height/5 >= button.rect.right:
                 button.display()
@@ -192,24 +201,46 @@ class Shop():
             "Upgrade Bomb Cooldown": [0, 11, 50000, [0, 1.5, 1.1], [0, 0, 5], True],
             "Upgrade Shield Regen Speed": [1, 10, 10000, [0, 1.5, 1.1], [0, 0, 3], True]
         }
+
+        self.buttons = []
+
         self.cannonCarousel = ButtonCarousel(150, 200, scrn_w-300, 100,
             ShopButton("Upgrade Laser Cannon Damage", self.items["Upgrade Laser Cannon Damage"]),
             ShopButton("Upgrade Laser Cannon Cooldown", self.items["Upgrade Laser Cannon Cooldown"]),
             ShopButton("Upgrade Laser Cannon Velocity", self.items["Upgrade Laser Cannon Velocity"])
         )
+        for button in self.cannonCarousel.buttons:
+            self.buttons.append(button)
+
         self.laserCarousel = ButtonCarousel(150, 350, scrn_w-300, 100,
             ShopButton("Buy Laser Beam", self.items["Buy Laser Beam"]),
             ShopButton("Upgrade Laser Beam Damage", self.items["Upgrade Laser Beam Damage"]),
             ShopButton("Upgrade Laser Beam Duration", self.items["Upgrade Laser Beam Duration"])
         )
+        for button in self.laserCarousel.buttons:
+            self.buttons.append(button)
+
         self.bombCarousel = ButtonCarousel(150, 500, scrn_w-300, 100,
             ShopButton("Buy Bomb", self.items["Buy Bomb"]),
             ShopButton("Upgrade Bomb Damage", self.items["Upgrade Bomb Damage"]),
             ShopButton("Upgrade Bomb Cooldown", self.items["Upgrade Bomb Cooldown"])
         )
+        for button in self.bombCarousel.buttons:
+            self.buttons.append(button)
+
         self.shieldCarousel = ButtonCarousel(150, 650, scrn_w-300, 100,
             ShopButton("Upgrade Shield Regen Speed", self.items["Upgrade Shield Regen Speed"])
         )
+        for button in self.shieldCarousel.buttons:
+            self.buttons.append(button)
+
+        self.carousels = [
+            self.cannonCarousel,
+            self.laserCarousel,
+            self.bombCarousel,
+            self.shieldCarousel
+        ]
+
         self.itemKeys = [
             "Upgrade Laser Cannon Damage",
             "Upgrade Laser Cannon Cooldown",
@@ -224,81 +255,51 @@ class Shop():
         ]
         self.clickToggle = False
 
-    def buy(self, item):
-        if item in self.items:
-            upgrade = self.items[item]
-            if item == "Buy Bomb" and self.items["Buy Laser Beam"] == 0:
-                return
-            if (upgrade[0] < upgrade[1] or upgrade[1] == -1) and player.money >= upgrade[2] and (upgrade[0] != 0 or item in ["Buy Laser Beam", "Buy Bomb"]) and not (item == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                upgrade[0] += 1
-                player.money -= int(upgrade[2])
-                for scale in range(len(upgrade[4])):
-                    if upgrade[0] > upgrade[4][scale]:
-                        if scale == 0:
-                            upgrade[2] += upgrade[3][0]
-                        elif scale == 1:
-                            upgrade[2] = upgrade[2] * upgrade[3][1]
-                        elif scale == 2:
-                            upgrade[2] = upgrade[2] ** upgrade[3][2]
-                    else:
-                        break
-                if item == "Upgrade Laser Cannon Damage":
-                    Bullet.damage += min(0.25, Bullet.damage**-0.9)
-                elif item == "Upgrade Laser Cannon Cooldown":
-                    player.bullet_firerate -= 10
-                elif item == "Upgrade Laser Cannon Velocity":
-                    player.bulletSpeed += 3
-                elif item == "Buy Laser Beam":
-                    player.unlockedWeapons.append("Laser Beam")
-                    self.items["Upgrade Laser Beam Damage"][0] = 1
-                    self.items["Upgrade Laser Beam Duration"][0] = 1
-                elif item == "Upgrade Laser Beam Damage":
-                    Laser.damage += 0.01
-                elif item == "Upgrade Laser Beam Duration":
-                    player.laserDuration += 50
-                elif item == "Buy Bomb":
-                    self.items["Upgrade Bomb Damage"][0] = 1
-                    self.items["Upgrade Bomb Cooldown"][0] = 1
-                    player.unlockedWeapons.append("Bomb")
-                elif item == "Upgrade Bomb Damage":
-                    Bomb.damage += 0.5
-                elif item == "Upgrade Bomb Cooldown":
-                    player.bomb_firerate -= 100
-                elif item == "Upgrade Shield Regen Speed":
-                    player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
+    def buy(self, button):
+        if not (button.isLocked() or button.isMaxed() or button.details[2] > player.money):
+            print(button.item)
+            upgrade = button.details
+            player.money -= int(upgrade[2])
+            for scale in range(len(upgrade[4])):
+                if upgrade[0] > upgrade[4][scale]:
+                    if scale == 0:
+                        upgrade[2] += upgrade[3][0]
+                    elif scale == 1:
+                        upgrade[2] = upgrade[2] * upgrade[3][1]
+                    elif scale == 2:
+                        upgrade[2] = upgrade[2] ** upgrade[3][2]
+                else:
+                    break
+            if button.item == "Upgrade Laser Cannon Damage":
+                Bullet.damage += min(0.25, Bullet.damage**-0.9)
+            elif button.item == "Upgrade Laser Cannon Cooldown":
+                player.bullet_firerate -= 10
+            elif button.item == "Upgrade Laser Cannon Velocity":
+                player.bulletSpeed += 3
+            elif button.item == "Buy Laser Beam":
+                player.unlockedWeapons.append("Laser Beam")
+                self.items["Upgrade Laser Beam Damage"][0] = 1
+                self.items["Upgrade Laser Beam Duration"][0] = 1
+            elif button.item == "Upgrade Laser Beam Damage":
+                Laser.damage += 0.01
+            elif button.item == "Upgrade Laser Beam Duration":
+                player.laserDuration += 50
+            elif button.item == "Buy Bomb":
+                self.items["Upgrade Bomb Damage"][0] = 1
+                self.items["Upgrade Bomb Cooldown"][0] = 1
+                player.unlockedWeapons.append("Bomb")
+            elif button.item == "Upgrade Bomb Damage":
+                Bomb.damage += 0.5
+            elif button.item == "Upgrade Bomb Cooldown":
+                player.bomb_firerate -= 100
+            elif button.item == "Upgrade Shield Regen Speed":
+                player.shieldRegenSpeed = math.ceil(500*0.95**upgrade[0])
 
     def display(self):
-        x_offset = 150
-        y_offset = 200
-        button_w = 500
-        button_h = 100
-        spacing_w = 50
-        spacing_h = 50
-        self.buttons = []
-        button = 0
-        for key in self.items:
-            if player.money >= self.items[key][2] and (self.items[key][0] < self.items[key][1] or self.items[key][1] == -1) and (self.items[key][0] != 0 or key in ["Buy Laser Beam", "Buy Bomb"]) and not (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                color = (0, 255, 0)
-            else:
-                color = (220, 220, 220)
-            self.buttons.append(pygame.Rect(x_offset, y_offset, button_w, button_h))
-            pygame.draw.rect(screen, color, self.buttons[button])
-            screen.blit(my_font.render(key, True, (0, 0, 0)), self.buttons[button])
-            screen.blit(my_font.render('$'+str(int(self.items[key][2]))[:-2]+'.'+str(int(self.items[key][2]))[-2:], True, (0, 0, 0)), self.buttons[button].copy().move(0, 50))
-            if (self.items[key][0] == 0 and key not in ["Buy Laser Beam", "Buy Bomb"]) or (key == "Buy Bomb" and self.items["Buy Laser Beam"][0] == 0):
-                screen.blit(my_font.render("Locked", True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
-            elif self.items[key][1] == -1:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0]), True, (0, 0, 0)), self.buttons[button].copy().move(350,50))
-            elif self.items[key][0] < self.items[key][1]:
-                screen.blit(my_font.render("Lv. "+str(self.items[key][0])+'/'+str(self.items[key][1]), True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
-            elif self.items[key][0] >= self.items[key][1]:
-                screen.blit(my_font.render("Lv. MAX", True, (0, 0, 0)), self.buttons[button].copy().move(350, 50))
-            x_offset += button_w + spacing_w
-            if x_offset + button_w + 100 > scrn_w:
-                x_offset = 150
-                y_offset += button_h + spacing_h
-            button += 1
-        
+        self.cannonCarousel.display()
+        self.laserCarousel.display()
+        self.bombCarousel.display()
+        self.shieldCarousel.display()
         continue_text = my_font.render("Press ENTER to Continue", False, (255, 255, 255))
         screen.blit(continue_text, (screen.get_width()/2 - continue_text.get_width()/2, 3*screen.get_height()/4))
 
@@ -307,9 +308,14 @@ class Shop():
         mouse = pygame.mouse.get_pressed()
         if mouse[0] and not self.clickToggle:
             self.clickToggle = True
-            for button in range(len(self.buttons)):
-                if self.buttons[button].collidepoint(pos):
-                    self.buy(self.itemKeys[button])
+            for button in self.buttons:
+                if button.rect.collidepoint(pos):
+                    self.buy(button)
+            for carousel in self.carousels:
+                if carousel.lBut.collidepoint(pos):
+                    carousel.scroll(-1)
+                elif carousel.rBut.collidepoint(pos):
+                    carousel.scroll(1)
         elif not mouse[0]:
             self.clickToggle = False
 
